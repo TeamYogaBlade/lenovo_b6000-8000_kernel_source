@@ -5,6 +5,8 @@ Build Command:
 kernel
 ======
 1. cd kernel directory
-2. TARGET_PRODUCT=lenovo89_tb_x8_jb2 MTK_ROOT_CUSTOM=../mediatek/custom/ make
+2. TARGET_PRODUCT=lenovo89_tb_x8_jb2
+3. MTK_ROOT_CUSTOM=../mediatek/custom/
+4. make
 
 Contact Lenovo support for information on obtaining Open Source code.
