@@ -1,0 +1,323 @@
+#! armcc -E
+;/*****************************************************************************
+;*  Copyright Statement:
+;*  --------------------
+;*  This software is protected by Copyright and the information contained
+;*  herein is confidential. The software may not be copied and the information
+;*  contained herein may not be used or disclosed except with the written
+;*  permission of MediaTek Inc. (C) 2007
+;*
+;*  BY OPENING THIS FILE, BUYER HEREBY UNEQUIVOCALLY ACKNOWLEDGES AND AGREES
+;*  THAT THE SOFTWARE/FIRMWARE AND ITS DOCUMENTATIONS ("MEDIATEK SOFTWARE")
+;*  RECEIVED FROM MEDIATEK AND/OR ITS REPRESENTATIVES ARE PROVIDED TO BUYER ON
+;*  AN "AS-IS" BASIS ONLY. MEDIATEK EXPRESSLY DISCLAIMS ANY AND ALL WARRANTIES,
+;*  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF
+;*  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.
+;*  NEITHER DOES MEDIATEK PROVIDE ANY WARRANTY WHATSOEVER WITH RESPECT TO THE
+;*  SOFTWARE OF ANY THIRD PARTY WHICH MAY BE USED BY, INCORPORATED IN, OR
+;*  SUPPLIED WITH THE MEDIATEK SOFTWARE, AND BUYER AGREES TO LOOK ONLY TO SUCH
+;*  THIRD PARTY FOR ANY WARRANTY CLAIM RELATING THERETO. MEDIATEK SHALL ALSO
+;*  NOT BE RESPONSIBLE FOR ANY MEDIATEK SOFTWARE RELEASES MADE TO BUYER'S
+;*  SPECIFICATION OR TO CONFORM TO A PARTICULAR STANDARD OR OPEN FORUM.
+;*
+;*  BUYER'S SOLE AND EXCLUSIVE REMEDY AND MEDIATEK'S ENTIRE AND CUMULATIVE
+;*  LIABILITY WITH RESPECT TO THE MEDIATEK SOFTWARE RELEASED HEREUNDER WILL BE,
+;*  AT MEDIATEK'S OPTION, TO REVISE OR REPLACE THE MEDIATEK SOFTWARE AT ISSUE,
+;*  OR REFUND ANY SOFTWARE LICENSE FEES OR SERVICE CHARGE PAID BY BUYER TO
+;*  MEDIATEK FOR SUCH MEDIATEK SOFTWARE AT ISSUE.
+;*
+;*  THE TRANSACTION CONTEMPLATED HEREUNDER SHALL BE CONSTRUED IN ACCORDANCE
+;*  WITH THE LAWS OF THE STATE OF CALIFORNIA, USA, EXCLUDING ITS CONFLICT OF
+;*  LAWS PRINCIPLES.  ANY DISPUTES, CONTROVERSIES OR CLAIMS ARISING THEREOF AND
+;*  RELATED THERETO SHALL BE SETTLED BY ARBITRATION IN SAN FRANCISCO, CA, UNDER
+;*  THE RULES OF THE INTERNATIONAL CHAMBER OF COMMERCE (ICC).
+;*
+;*****************************************************************************/
+;
+;/*****************************************************************************
+; *
+; * Filename:
+; * ---------
+; *   scatLENOVO75_MODEM.txt
+; *
+; * Project:
+; * --------
+; *   Maui_Software
+; *
+; * Description:
+; * ------------
+; *   defines the memory map for the validation board
+; *
+; * Author:
+; * -------
+; *   system auto generator v4.02 -> p4.15 -> p4.17 -> p4.60 -> p4.62 -> p4.74 -> p3.91 -> p4.96 -> p4.97 -> p5.39 -> p5.79
+; *
+; * Auto Generated Date:
+; * -------
+; *   2012/9/5
+; *
+; * Revision History:
+; * -------
+; * $Log: scatLENOVO75_MODEM.txt system auto generator v4.02 -> p4.15 -> p4.17 -> p4.60 -> p4.62 -> p4.74 -> p3.91 -> p4.96 -> p4.97 -> p5.39 -> p5.79 $
+; * 
+; ****************************************************************************/
+;
+;=========================================================================
+; This scatter file is auto-generated and please DO NOT change the content at will
+;=========================================================================
+;
+;--------------------
+; SCHEME   : external 60MB flash memory and 128MB SRAM
+; PLATFORM : MT6575
+; FEATURES : 
+;--------------------
+
+#define ALIGNMENT_1MB 0x100000
+#define ALIGN(address, alignment) ((address+(alignment-1)) AND ~(alignment-1))
+ROM 0x00000000 0x600000
+{
+    ROM 0x00000000 0x00000800
+    {
+         bootarm.obj (C$$code,+First)
+         *.obj (LEADING_PART)
+    }
+    ROM0 0x00000800 FIXED 
+    {
+         *.obj (SECINFO)
+    }
+    ROMHEAD +0x0 
+    {
+         *.obj (SECOND_PART)
+         *.obj (MAUI_FOTA_HEAD_INFO)
+    }
+    ROM1 +0x0 
+    {
+         .ANY (+RO-CODE)
+         .ANY (+RO-DATA)
+    }
+    EXTSRAM 0x00600000 
+    {
+         * (NONCACHEDRW, NONCACHEDZI)
+         *deniro.lib (+RW, +ZI)
+         *fs_fig.lib (+RW, +ZI)
+    }
+    DYNAMIC_CACHEABLE_EXTSRAM_DEFAULT_NONCACHEABLE_ZI_MMIPOOL +0x1000 
+    {
+         med_main.obj (LARGEPOOL_ZI)
+         * (DYNAMICCACHEABLEZI_NC_MMIPOOL)
+    }
+    DYNAMIC_CACHEABLE_EXTSRAM_DEFAULT_NONCACHEABLE_ZI +0x0 
+    {
+         * (DYNAMICCACHEABLEZI_NC)
+    }
+    DYNAMIC_CACHEABLE_EXTSRAM_DEFAULT_NONCACHEABLE_RW +0x0 
+    {
+         * (DYNAMICCACHEABLERW_NC)
+    }
+    PAGE_TABLE +0xF0001000 
+    {
+         * (PAGETABLE)
+    }
+    CACHED_EXTSRAM +0x0
+    {
+; All RW/ZI are put in CACHED region by default
+         * (+RW, +ZI)
+         * (CACHED_EXTSRAM_RW, CACHED_EXTSRAM_ZI)
+    }
+    CACHED_EXTSRAM_NVRAM_LTABLE +0x00 
+    {
+         * (_nvram_ltable)
+         * (_indirect_init)
+         * (_fs_filetable)
+    }
+    DYNAMIC_CACHEABLE_EXTSRAM_DEFAULT_CACHEABLE_RW +0x1000 
+    {
+         * (DYNAMICCACHEABLERW_C)
+    }
+    DYNAMIC_CACHEABLE_EXTSRAM_DEFAULT_CACHEABLE_ZI_MMIPOOL +0x0 
+    {
+         * (DYNAMICCACHEABLEZI_C_MMIPOOL)
+    }
+    DYNAMIC_CACHEABLE_EXTSRAM_DEFAULT_CACHEABLE_ZI_FLMM_PASPACE +0x0 
+    {
+         * (FLMM_PASPACE)
+    }
+    DYNAMIC_CACHEABLE_EXTSRAM_DEFAULT_CACHEABLE_ZI +0x0 
+    {
+         * (DYNAMICCACHEABLEZI_C)
+    }
+    CACHED_DUMMY_END 0xf12c4000 
+    {
+         bootarm.obj (DUMMY_POOL)
+    }
+    EXTSRAM_TMP_PAGE_TABLE 0x012c4000 0x4000
+    {
+         * (TMPPAGETABLE)
+    }
+    EXTSRAM_FS 0x01700000 0x300000
+    {
+         flash_mtd.ramdisk.obj (STATICRW , STATICCONST, STATICZI)
+    }
+; MCU and DSP shared memory pool, should be 32KB-aligned
+    EXTSRAM_MCU_NC_DSP_NC_SHAREMEM 0x012c8000 0x00010000
+    {
+         *.obj (DMDSP_SHARE_MCU_NC_DSP_NC_RODATA, DMDSP_SHARE_MCU_NC_DSP_NC_RW, DMDSP_SHARE_MCU_NC_DSP_NC_ZI)
+         *.obj (DMDSP_SHARE_DSSYS_RODATA, DMDSP_SHARE_DSSYS_RW, DMDSP_SHARE_DSSYS_ZI)
+         *.obj (DMDSP_SHARE_UART_RODATA, DMDSP_SHARE_UART_RW, DMDSP_SHARE_UART_ZI)
+         *.obj (DMDSP_SHARE_VIDEO_RODATA, DMDSP_SHARE_VIDEO_RW, DMDSP_SHARE_VIDEO_ZI)
+         *.obj (DMDSP_SHARE_AUDIO_RODATA, DMDSP_SHARE_AUDIO_RW, DMDSP_SHARE_AUDIO_ZI)
+    }
+; DSP execution regions cannot be OVERLAY; its size should be specified as 2^N, larger than 4KB, and should be 32K aligned with its start and END address
+    EXTSRAM_DSP_TX 0x012d8000 0x10000
+    {
+         *.obj (EXTRAM_TXDATA)
+    }
+    EXTSRAM_DSP_RX 0x012e8000 0x18000
+    {
+         *.obj (EXTRAM_RXDATA)
+    }
+    ; define an empty section to detect unsafe APIs in link time
+    SHOULDBE_EMPTYSECTION +0 0x0
+    {
+        armlibc_rt.obj (SHOULD_NOT_USED_FUNCTION)
+        armlibc_rt_heap.obj (SHOULD_NOT_USED_FUNCTION)
+        armlibc_rt_io.obj (SHOULD_NOT_USED_FUNCTION)
+        syscomp_config.obj (SHOULD_NOT_USED_RODATA)
+    }
+    EMIINIT_CODE 0x50000000 OVERLAY
+    {
+         * (EMIINITCODE, EMIINITCONST, EMIINITZI)
+    }
+    INTSRAM_CODE 0x50000000 OVERLAY 0x00010000
+    {
+; Please do NOT remove any content below!
+         * (INTSRAM_ROCODE)
+         * (INTSRAM_ROCODE_*)
+         switch8.o (+RO-CODE)
+; system-realted CODE , ARM9/ARM11 Family SMALL set
+         bootarm.obj (INTERNCODE)
+         cache.obj (INTERNCODE)
+; Nucleus-related CODE , ARM9/ARM11 Family SMALL set
+         tct.obj (INTERNCODE)
+; INTERNCODE_TP needs to be put in INTSRAM along with tct.obj (INTERNCODE)
+         * (INTERNCODE_TP)
+; utilities-related CODE , ARM9/ARM11 Family SMALL set
+         SST_intrCtrl.obj (INTERNCODE, INTERNCONST)
+         emi.obj (INTERNCODE)
+; INTSRAM_CODE_OBJ_others_6573
+         l1d_data.obj (INTERNCODE)
+         divider.obj (INTERNCODE)
+         gpt.obj (INTERNCODE)
+         lpwr.obj (INTERNCODE)
+         l1sm.obj (INTERNCODE)
+
+         visualhisr.obj (INTERNCODE)
+         video_comm.obj (INTERNCODE)
+         pdn.obj(INTERNCODE)         
+         wmeas.obj (INTERNCODE)
+         wcellinfo.obj (INTERNCODE)     
+         wcore.obj (INTERNCODE)
+         wtxbrp.obj (INTERNCODE)
+         wrxbrp.obj (INTERNCODE)
+         wrfm.obj (INTERNCODE)
+         wcs.obj (INTERNCODE)
+         ul1sm.obj (INTERNCODE)
+         l1csm.obj (INTERNCODE) 
+         m12168.obj (INTERNCODE)
+         m11303.obj (INTERNCODE)
+         m11305.obj (INTERNCODE)
+         m12194.obj (INTERNCODE)
+         L1Trc.obj (INTERNCODE)
+
+         ccm.obj (INTERNCODE)
+         dm.obj(INTERNCODE)
+         cs.obj(INTERNCODE)
+         cmm.obj(INTERNCODE)
+         rach.obj(INTERNCODE)
+         timer.obj(INTERNCODE)
+         frame_tick.obj(INTERNCODE)
+         time.obj(INTERNCODE)             
+         ul1d_ps.obj (INTERNCODE)             
+         ul1d_rf_control.obj (INTERNCODE)     
+         ul1d_pch.obj (INTERNCODE)
+         uscounter.obj (INTERNCODE)
+
+; Please Do Not Remove
+         l1d_internal_data.obj (INTERNCODE)
+         m12100.obj (INTERNCODE)         
+         m12110.obj (INTERNCODE)
+         m12120.obj (INTERNCODE)
+         m12160.obj (INTERNCODE)
+         m12170.obj (INTERNCODE)
+         m12167.obj (INTERNCODE)
+         m12180.obj (INTERNCODE)
+; Please do NOT remove any content above!
+    }
+    INTSRAM_DATA 0x50100000 0x00010000
+    {
+; Please do NOT remove any content below!
+         * (INTSRAM_RODATA, INTSRAM_RW, INTSRAM_ZI)
+         * (INTSRAM_RODATA_*, INTSRAM_RW_*, INTSRAM_ZI_*)
+; system-realted data
+         bootarm.obj (STACK_POOL_INTSRAM)
+         ctrl_buff_pool.obj (INTERNCONST, INTERNRW, INTERNZI)
+         stack_ltlcom.obj (INTERNCONST, INTERNRW, INTERNZI)
+; Nucleus-related data ; ARM9/ARM11 Family STANDARD set
+         *nucleus_critical_data.lib (+RW, +ZI)
+         *nucleus_ctrl_code.lib (+RW, +ZI)
+; INTERNRW_TP and INTERNZI_TP need to be put in INTSRAM along with tct.obj
+         * (INTERNRW_TP, INTERNZI_TP)
+         *nucleus_v2_critical_data.lib (+RW, +ZI)
+         *nucleus_v2_ctrl_code.lib (+RW, +ZI)
+; utilities-related data , ARM9/ARM11 Family SMALL set
+         emi.obj (INTERNCONST, INTERNRW, INTERNZI)
+         custom_scatstruct.obj (INTERNCONST, INTERNRW, INTERNZI)
+
+; Please do NOT remove any content above!
+    }   
+    L2TCM_CODE 0x58000000 0x12000
+    {
+        * (L2TCM_RODATA, L2TCM_ROCODE)
+    }
+    L2TCM_DATA 0x58012000 0x3000
+    {
+        * (L2TCM_RW, L2TCM_ZI)
+    }
+    DYNAMIC_CODE2 0x50113800 OVERLAY 0x2800
+    {
+         * (G3D_DYNAMIC_ZI)
+    }
+    DYNAMIC_CODE1 0x50116000 OVERLAY 0x5000
+    {
+         * (AMR515_DYNAMIC_ZI)
+    }
+    DYNAMIC_CODE11 0x50116000 OVERLAY 0x5000
+    {
+         * (VRENGINE_DYNAMIC_ZI)
+    }
+    DYNAMIC_CODE3 0x50116000 OVERLAY 0x5000
+    {
+         * (CTM_DYNAMIC_ZI)
+    }
+    DYNAMIC_CODE4 0x50116000 OVERLAY 0x5000
+    {
+         * (G729_DYNAMIC_ZI)
+    }
+    DYNAMIC_CODE5 0x50116000 OVERLAY 0x5000
+    {
+         * (SBC_DYNAMIC_ZI)
+    }
+    INTSRAM_MULTIMEDIA 0x40000000 OVERLAY 0x00043000
+    {
+;         med_main.obj (INTERNRW1, INTERNZI1)
+    }
+}
+
+DSP_ROM 0x01300000
+{
+    DSP_ROM 0x01300000
+    {
+        *.obj (DSP_DATA)
+    }
+}
+
