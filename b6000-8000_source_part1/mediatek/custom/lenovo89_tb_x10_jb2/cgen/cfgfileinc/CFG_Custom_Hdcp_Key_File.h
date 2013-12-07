@@ -1,0 +1,13 @@
+#ifndef _CFG_CUSTOM1_HDCP_KEY_FILE_H
+#define _CFG_CUSTOM1_HDCP_KEY_FILE_H
+
+typedef struct
+{
+	unsigned char HdcpKeyArray[287];
+}FILE_CUSTOM_HDCP_KEY_STRUCT;
+
+#define CFG_FILE_CUSTOM_HDCP_KEY_REC_SIZE    sizeof(FILE_CUSTOM_HDCP_KEY_STRUCT)
+#define CFG_FILE_CUSTOM_HDCP_KEY_REC_TOTAL   1
+
+#endif
+
