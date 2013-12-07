@@ -35,8 +35,7 @@ export PATH=~/Your_Toolchain_PATH/
 for example /alps/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.6/bin  
 Build Command:  
 (uboot had been phase out from jb)  
-kernel
-======
+### kernel
 1. cd kernel
 2. For b6000: export TARGET_PRODUCT=lenovo89_tb_x8_jb2
 4. For b8000: export TARGET_PRODUCT=lenovo89_tb_x10_jb2
