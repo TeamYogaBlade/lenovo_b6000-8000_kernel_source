@@ -29,3 +29,16 @@ unzip ../b6000-8000_source_part1.zip -d .
 unzip ../b6000-8000_source_part2.zip -d .
 unzip ../b6000-8000_source_part3.zip -d .
 </pre>
+
+## Building
+export PATH=~/Your_Toolchain_PATH/
+for example /alps/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.6/bin
+Build Command:
+(uboot had been phase out from jb)
+kernel
+======
+1. cd kernel
+2. For b6000: export TARGET_PRODUCT=lenovo89_tb_x8_jb2
+4. For b8000: export TARGET_PRODUCT=lenovo89_tb_x10_jb2
+3. export MTK_ROOT_CUSTOM=../mediatek/custom/
+4. make
