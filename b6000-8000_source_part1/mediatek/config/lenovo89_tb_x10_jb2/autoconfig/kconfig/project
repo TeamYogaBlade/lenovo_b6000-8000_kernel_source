@@ -1,0 +1,63 @@
+CONFIG_MT6589_EVB_BOARD=y
+CONFIG_MT6589_FPGA_CA7=n
+CONFIG_MT6589_FPGA=n
+CONFIG_EARLY_LINUX_PORTING=n
+CONFIG_SOUND=y
+
+CONFIG_POWER_EXT=n
+CONFIG_MTK_VIDEOCODEC_DRIVER=m
+# CONFIG_MTK_NFC is not set
+
+CONFIG_USB_MTK_OTG=y
+CONFIG_USB_MTK_HDRC_HCD=y
+# CONFIG_MTD_DATAFLASH is not set
+# CONFIG_MTD_M25P80 is not set
+# CONFIG_MTD_SST25L is not set
+# CONFIG_TI_DAC7512 is not set
+# CONFIG_EEPROM_AT25 is not set
+# CONFIG_EEPROM_93XX46 is not set
+# CONFIG_SENSORS_LIS3_SPI is not set
+# CONFIG_KS8851 is not set
+##CONFIG_NET_VENDOR_MICROCHIP=y
+### CONFIG_ENC28J60 is not set
+### CONFIG_MICREL_KS8995MA is not set
+### CONFIG_TOUCHSCREEN_ADS7846 is not set
+### CONFIG_TOUCHSCREEN_AD7877 is not set
+### CONFIG_TOUCHSCREEN_TSC2005 is not set
+### CONFIG_SERIAL_MAX3100 is not set
+### CONFIG_SERIAL_MAX3107 is not set
+##CONFIG_SPI=y
+### CONFIG_SPI_DEBUG is not set
+##CONFIG_SPI_MASTER=y
+###
+### SPI Master Controller Drivers
+###
+### CONFIG_SPI_ALTERA is not set
+### CONFIG_SPI_BITBANG is not set
+### CONFIG_SPI_PL022 is not set
+### CONFIG_SPI_PXA2XX_PCI is not set
+### CONFIG_SPI_XILINX is not set
+### CONFIG_SPI_DESIGNWARE is not set
+###
+### SPI Protocol Masters
+###
+### CONFIG_SPI_SPIDEV is not set
+### CONFIG_SPI_TLE62X0 is not set
+### CONFIG_MFD_DA9052_SPI is not set
+### CONFIG_MFD_WM831X_SPI is not set
+### CONFIG_MFD_MC13XXX is not set
+### CONFIG_EZX_PCAP is not set
+### CONFIG_LEDS_DAC124S085 is not set
+### CONFIG_RTC_DRV_M41T93 is not set
+### CONFIG_RTC_DRV_M41T94 is not set
+### CONFIG_RTC_DRV_DS1305 is not set
+### CONFIG_RTC_DRV_DS1390 is not set
+### CONFIG_RTC_DRV_MAX6902 is not set
+### CONFIG_RTC_DRV_R9701 is not set
+### CONFIG_RTC_DRV_RS5C348 is not set
+### CONFIG_RTC_DRV_DS3234 is not set
+### CONFIG_RTC_DRV_PCF2123 is not set
+##CONFIG_MTK_SPI=y
+##
+##CONFIG_MTK_CMMB=m
+

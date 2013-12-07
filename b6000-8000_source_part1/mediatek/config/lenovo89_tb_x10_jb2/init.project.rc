@@ -1,0 +1,148 @@
+# MTK project .rc configure 
+on early-init
+    mkdir /mnt/usbotg 0000 system system
+
+on post-fs
+# CMMB Driver
+    insmod /system/lib/modules/cmmbdrv.ko
+
+    #Siano
+    chown root media /dev/mdtvctrl
+    chown root media /dev/mdtv1
+    chown root media /dev/mdtv2
+    chown root media /dev/mdtv3
+    chown root media /dev/mdtv4
+    chown root media /dev/mdtv5
+    chown root media /dev/mdtv6
+    chown root media /dev/mdtv7
+    chown root media /dev/mdtv8    
+    chown root media /dev/mdtv9
+    chown root media /dev/mdtv10
+    chown root media /dev/mdtv11
+    chown root media /dev/mdtv12
+    chown root media /dev/mdtv13
+    chown root media /dev/mdtv14
+    chown root media /dev/mdtv15
+    chown root media /dev/mdtv16
+    
+    chmod 0660 /dev/mdtvctrl
+    chmod 0660 /dev/mdtv1
+    chmod 0660 /dev/mdtv2
+    chmod 0660 /dev/mdtv3
+    chmod 0660 /dev/mdtv4
+    chmod 0660 /dev/mdtv5
+    chmod 0660 /dev/mdtv6
+    chmod 0660 /dev/mdtv7
+    chmod 0660 /dev/mdtv8    
+    chmod 0660 /dev/mdtv9
+    chmod 0660 /dev/mdtv10
+    chmod 0660 /dev/mdtv11
+    chmod 0660 /dev/mdtv12
+    chmod 0660 /dev/mdtv13
+    chmod 0660 /dev/mdtv14
+    chmod 0660 /dev/mdtv15
+    chmod 0660 /dev/mdtv16  
+    
+on post-fs-data
+# CMMB data
+    mkdir /data/misc/cmmb 0775 media media
+
+#
+# Connectivity related device nodes & configuration (begin)
+#
+
+#/dev/ttyMT2 for Connectivity BT/FM/GPS usage
+    chmod 0660 /dev/ttyMT2
+    chown system system /dev/ttyMT2
+
+
+# STP, WMT, GPS, FM and BT Driver
+    insmod /system/lib/modules/mtk_hif_sdio.ko
+    insmod /system/lib/modules/mtk_stp_wmt.ko
+    insmod /system/lib/modules/mtk_stp_uart.ko
+    insmod /system/lib/modules/mtk_stp_gps.ko
+    insmod /system/lib/modules/mtk_stp_bt.ko
+    insmod /system/lib/modules/mtk_fm_drv.ko
+    insmod /system/lib/modules/mtk_fm_priv.ko
+    insmod /system/lib/modules/mtk_wmt_wifi.ko
+
+# Create char device file for WMT, GPS, BT, FM, WIFI
+    mknod /dev/stpwmt c 190 0;
+    mknod /dev/stpgps c 191 0;
+    mknod /dev/stpbt  c 192 0;
+
+    chmod 0660 /dev/stpwmt
+    chown system system /dev/stpwmt
+ 
+    mknod /dev/wmtWifi c 153 0
+    chmod 0660 /dev/wmtWifi
+    chown system system /dev/wmtWifi
+
+# BT
+    chmod 0660 /dev/stpbt
+    chown bluetooth radio /dev/stpbt
+
+# GPS
+    chown gps gps /dev/stpgps
+	chown gps gps /dev/ttyMT0
+    chown gps gps /sys/class/gpsdrv/gps/pwrctl
+    chown gps gps /sys/class/gpsdrv/gps/suspend
+    chown gps gps /sys/class/gpsdrv/gps/state
+    chown gps gps /sys/class/gpsdrv/gps/pwrsave
+    chown gps gps /sys/class/gpsdrv/gps/status
+   	chmod 0660 /dev/ttyMT0
+   	chmod 0660 /dev/stpgps
+
+# WiFi
+    mkdir /data/misc/wifi 0770 wifi wifi
+    mkdir /data/misc/wifi/sockets 0770 wifi wifi
+    mkdir /data/misc/wpa_supplicant 0770 wifi wifi
+    chown wifi wifi /data/misc/wifi
+
+# Load WiFi Driver
+    insmod /system/lib/modules/wlan.ko
+
+# Char device for BT 3.0 HS
+    mknod /dev/ampc0 c 151 0
+    chown bluetooth bluetooth /dev/ampc0
+    chmod 0660 /dev/ampc0
+
+#
+# Connectivity related device nodes & configuration (end)
+#
+
+    #Innofidei
+    chown root media /dev/innodev0
+    chown root media /dev/innodev1
+    chown root media /dev/innodev2
+    chown root media /dev/innodev3  
+      
+    chmod 0660 /dev/innodev0
+    chmod 0660 /dev/innodev1
+    chmod 0660 /dev/innodev2
+    chmod 0660 /dev/innodev3
+    
+
+# Encrypt phone function
+    setprop vold.post_fs_data_done 1
+
+on boot
+
+#
+# Connectivity related services (Begin)
+#
+service 662x_launcher /system/bin/logwrapper /system/bin/6620_launcher -b 4000000 -p /system/etc/firmware/ -d /dev/ttyMT2
+    user system
+    group system
+    class core
+
+service stp_dump /system/bin/stp_dump3
+    user system
+    group system net_admin
+    class main
+#   oneshot
+
+#
+# Connectivity related services (End)
+#
+
