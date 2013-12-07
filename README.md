@@ -31,10 +31,10 @@ unzip ../b6000-8000_source_part3.zip -d .
 </pre>
 
 ## Building
-export PATH=~/Your_Toolchain_PATH/
-for example /alps/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.6/bin
-Build Command:
-(uboot had been phase out from jb)
+export PATH=~/Your_Toolchain_PATH/  
+for example /alps/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.6/bin  
+Build Command:  
+(uboot had been phase out from jb)  
 kernel
 ======
 1. cd kernel
