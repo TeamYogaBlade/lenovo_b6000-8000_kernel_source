@@ -1,0 +1,1271 @@
+;*****************************************************************************
+;  Copyright Statement:
+;  --------------------
+;  This software is protected by Copyright and the information contained
+;  herein is confidential. The software may not be copied and the information
+;  contained herein may not be used or disclosed except with the written
+;  permission of MediaTek Inc. (C) 2001
+;
+;*****************************************************************************
+;
+;*****************************************************************************
+;
+; Filename:
+; ---------
+;   AP_MD_MASTER_MT6573.cmm
+;
+; Project:
+; --------
+;   Device Test
+;
+; Description:
+; ------------
+;   This file contains the Trace32 script file for MT6573 device test
+;
+; Author:
+; -------
+;   SYSVAL
+;
+;============================================================================
+;             HISTORY
+; Below this line, this part is controlled by PVCS VM. DO NOT MODIFY!!
+;------------------------------------------------------------------------------
+; * $Revision$
+; * $Modtime$
+; * $Log$
+;------------------------------------------------------------------------------
+; Upper this line, this part is controlled by PVCS VM. DO NOT MODIFY!!
+;============================================================================
+;*****************************************************************************
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;   New CMM for ARM11
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; [???]   Whether this instruction has no effect so that ICE has no change to gate CPU, 
+;            and EMI return BOOTROM code (DEC ERR area since no BOOTROM currently) causing 
+;            CPU to data abort.
+;            Further, this instruction can not reset CPU status (ex: MMU).
+;   SYStem.RESet only reset the ICE-related circuit.
+SYStem.RESet
+
+SYStem.CPU ARM1176JZ
+System.Option Cflush on    	;flush the cache to avoid data consistency
+SYStem.JtagClock Rtck
+System.Option ResBreak off 	;Don't hold the ARM11 core after reset
+;System.Option EnReset off
+System.Option EnReset on
+
+; Workaround from Shock to improve JTAG connectivity issue
+;jtag.LOCK 
+;jtag.pin.enable
+;jtag.pin.NTRST LOW 
+;wait 300.ms
+;jtag.pin.NTRST HIGH
+;wait 200.ms
+;jtag.pin.tck HIGH
+;jtag.UNLOCK 
+;sys.m.ATTACH
+
+GLOBAL &PLATFORM_TYPE
+GLOBAL &FPGA2_SETTING
+GLOBAL &MULTICORE_DEBUG_ENABLED
+GLOBAL &MULTICORE_AP_ONLY
+GLOBAL &MULTICORE_MD_ONLY
+GLOBAL &DAISYCHAINING_ENABLED
+GLOBAL &AP_MASTER
+
+;------------------------------------------------------------------------------------------------------------
+;                                            EMI Frequency CONFIGURATION                                          
+;------------------------------------------------------------------------------------------------------------
+; EMI_FREQUENCY is one of the following: 13, 100, 152, 166, 200 (MHz)
+GLOBAL &EMI_FREQUENCY
+&EMI_FREQUENCY=166
+
+;------------------------------------------------------------------------------------------------------------
+;                                            PLL INIT CONFIGURATION                                          
+;------------------------------------------------------------------------------------------------------------
+GLOBAL &PLL_INIT
+GLOBAL &EMI_ONLY
+GLOBAL &EMI_INIT
+GLOBAL &EMI_CHANGE
+GLOBAL &ALL_PLLS
+GLOBAL &APM_INIT
+GLOBAL &SYSCLK_FROM_AUXADC
+
+&PLL_INIT=1				// 1 = PLL_CONFIG_MT6573.cmm configures PLLs according to flags below
+					// 0 = PLL_CONFIG_MT6573.cmm has no effect (no PLL config is done)
+
+; Description				&PLL_INIT	&EMI_ONLY	&EMI_INIT	&EMI_CHANGE	&ALL_PLLS	&APM_INIT	&SYSCLK_FROM_AUXADC
+;----------------------------------------------------------------------------------------------------------------------------------------------------------
+; No PLL init done			    0		    X		    X		     X		    X		    X			 X
+; Init EMI only   			    1		    1		    1		     X		    X		    X			 X
+; Change EMI only			    1		    1		    0		     1		    X		    X			 X
+; Init MPLL,DPLL,2GPLL,3GPLL		    1		    0		    0		     X		    0		    0			 X
+; Init MPLL,DPLL,2GPLL,3GPLL,AMPLL	    1		    0		    0		     X		    0		    1			 X
+; Init MPLL,DPLL,2GPLL,3GPLL,EPLL	    1		    0		    1		     X		    0		    0			 X
+; Init MPLL,DPLL,2GPLL,3GPLL,EPLL,AMPLL	    1		    0		    1		     X		    0		    1			 X
+; Init all PLLs except EPLL & AMPLL	    1		    0		    0		     X		    1		    0			 0
+; Init all PLLs except EPLL		    1		    0		    0		     X		    1		    1			 0
+; Init all PLLs				    1		    0		    1		     X		    1		    1			 0
+; Init all PLLs, AUXADC supplies SYSCLK	    1		    0		    1		     X		    1		    1			 1
+
+;---------------------------------------------------------------------------------------------------------------------
+; When called, 'PLL_CONFIG_MT6573.cmm' always configures DPLL, MPLL, 2GPLL & 3GPLL unless EMI_ONLY is set (see below)
+; Note that the 2GPLL supplies the 48MHz USB clock
+;---------------------------------------------------------------------------------------------------------------------
+&EMI_ONLY=0	     			// 1 = PLL_CONFIG_MT6573.cmm initializes or changes EMI only (DPLL, MPLL, 2GPLL & 3GPLL are not configured)
+					//     EMI_INIT & EMI_SET control whether the EMI is initialized or changed (see below)
+					//     Useful for DDR2 initialization where the EMI needs to be controlled separately from the other PLLS
+					// 0 = PLL_CONFIG_MT6573.cmm DOES NOT configure EMI only (DPLL, MPLL, 2GPLL & 3GPLL are configured by default)
+
+&EMI_INIT=1				// if EMI_ONLY==0
+					// 1 = PLL_CONFIG_MT6573.cmm configures EMI + DPLL, MPLL, 2GPLL & 3GPLL
+					// 0 = PLL_CONFIG_MT6573.cmm configures DPLL, MPLL, 2GPLL & 3GPLL as normal (EMI is not configured)
+					// if EMI_ONLY==1
+					// 1 = PLL_CONFIG_MT6573.cmm initializes EMI only
+					// 0 = PLL_CONFIG_MT6573.cmm does not initialize EMI
+
+&EMI_CHANGE=0				// if EMI_ONLY==0
+					// This script variable has no effect
+					// if EMI_INIT==1
+					// This script variable has no effect (you cannot initialize EMI and change EMI in the same call)
+					// if EMI_ONLY==1
+					// 1 = PLL_CONFIG_MT6573.cmm changes the current EMI frequency
+					// 0 = PLL_CONFIG_MT6573.cmm does not change the current EMI frequency
+
+&ALL_PLLS=0				// 1 = PLL_CONFIG_MT6573.cmm also configures FGPLL, TVPLL, AUXPLL, CPLL & THREEDPLL
+					// 0 = PLL_CONFIG_MT6573.cmm DOES NOT configure FGPLL, TVPLL, AUXPLL, CPLL & THREEDPLL
+
+&APM_INIT=1				// 1 = PLL_CONFIG_MT6573.cmm configures AMPLL
+					// 0 = PLL_CONFIG_MT6573.cmm DOES NOT configure AMPLL
+
+&SYSCLK_FROM_AUXADC=0			// 1 = PLL_CONFIG_MT6573.cmm configures the AUXADC as the source of SYSCLK (requires &ALL_PLLS to be set to 1)
+					// 0 = PLL_CONFIG_MT6573.cmm DOES NOT configure the AUXADC as the source of SYSCLK
+
+; NOTE
+; The PLL can only be initialized AFTER the 'SYStem.Up' call (see below)
+;
+;------------------------------------------------------------------------------------------------------------
+;                                           END OF PLL INIT CONFIGURATION                                    
+;------------------------------------------------------------------------------------------------------------
+
+;------- Platform Setting -------
+; 0 = FPGA       (e.g. MT6573_FPGA#_FULL)
+; 1 = E1         (includes MT6573_FPGA#2_DBG)
+; 2 = E2 etc etc
+&PLATFORM_TYPE=1
+
+;----------------------------------------------------------------------------------
+; TRACE32/Codeviser Configuration Options
+;----------------------------------------------------------------------------------
+; TRACE32 & CodeViser supported EXCEPT where indicated below
+;
+; 1A = AP-based control, daisychaining DISABLED
+; 1B = AP-based control, daisychaining ENABLED
+; 2A = MD-based control, daisychaining DISABLED 
+; 2B = MD-based control, daisychaining ENABLED                (TRACE32-only)
+; 3A = AP-based control in multi-core (2-window) environment  (TRACE32-only)
+; 3B = MD-based control in multi-core (2-window) environment  (TRACE32-only)
+; 3C = AP & MD control in multi-core (2-window) environment   (TRACE32-only)
+;
+;----------------------------------------------------------------------------------
+;				1A	1B	2A	2B	3A	3B	3C
+;----------------------------------------------------------------------------------
+; AP_MD_MASTER_MT6573.CMM (this file)
+; ===================================
+;&PLATFORM_TYPE			 1	 X	 1	 X	 X	 X	 X
+;&MULTICORE_DEBUG_ENABLED	 0	 0	 0	 0	 1	 1	 1
+;&MULTICORE_AP_ONLY		 0	 0	 0	 0	 1	 0	 0
+;&MULTICORE_MD_ONLY		 0	 0	 0	 0	 0	 1	 0
+;&DAISYCHAINING_ENABLED		 0	 0	 1	 1	(1)	(1)	(1)
+;&AP_MASTER			 1	 0	 1	 0	(1)	(1)	(1)
+;----------------------------------------------------------------------------------
+; MD_DUAL_JTAG_MT6573.CMM
+; =======================
+;&MULTICORE_DEBUG_ENABLED	 X	 X	 X	 X	 1	 1	 1
+;----------------------------------------------------------------------------------
+;
+; NOTE
+; (1) = this variable is forced to 1 in the script &AP_MD_MASTER_MT6573.cmm
+;       whenever the variable &MULTICORE_DEBUG_ENABLE’ is set to 1
+;       (so in this case it doesn't matter how it is set)
+
+;------- Multicore Debug Setting -------
+; Assumes that a dual-window environment is being used
+; This is currently started using the 'T32Start' application
+; This environment sets up and uses INTERCOM commands
+&MULTICORE_DEBUG_ENABLED=0
+&MULTICORE_AP_ONLY=0
+&MULTICORE_MD_ONLY=0
+
+;------- Daisychain Setting -------
+&DAISYCHAINING_ENABLED=0
+
+;------- AP/MD Master Setting ------- 
+; AP_MASTER = 1 => AP is Master
+; AP_MASTER = 0 => MD is Master
+&AP_MASTER=1
+
+;----------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------
+
+;------- FPGA1 Vs FPGA2 Setting ------- 
+; 0 = FPGA1
+; 1 = FPGA2
+; DO NOT CHANGE
+&FPGA2_SETTING=1
+
+; JTAG serial scan HW defaults to non-daisychain mode
+; i.e. AP & MD are NOT both connected in the serial scan path
+; Only 1 core (AP or MD) is in the JTAG scan path
+; Which one is in depends on how the following two locations are set
+;    D.S. SD:0x700FA034 %LE %LONG 0x00000001    ; AP MCU
+;    D.S. SD:0x700FA038 %LE %LONG 0x00000000    ; MD MCU
+; AP JTAG is connected by default    (i.e. *0x700FA034 = 0x1 at reset)
+; MD JTAG is disconnected by default (i.e. *0x700FA038 = 0x0 at reset)
+System.MultiCore IRPRE 0.
+System.MultiCore DRPRE 0.
+System.MultiCore IRPOST 0.
+System.MultiCore DRPOST 0.
+
+;   SYStem.Up will reset the CPU (including all its status).
+SYStem.Up
+
+setup.IMASKHLL ON
+setup.IMASKASM ON
+
+wait 100.ms
+
+;[---]   Force ARM11 start-up at svc mode (this version wrongly starts up at abt mode).
+;           Removed.
+B::R.S M 0x13
+
+;FPGA#2
+IF &FPGA2_SETTING==1
+(
+    ;Disable AP watchdog
+    D.S SD:0x70025000 %LE %WORD 0x2200
+    ;Disable DSP watchdog
+    D.S SD:0x70025020 %LE %WORD 0x2200
+    ;Disable MD watchdog
+    D.S SD:0x70025030 %LE %WORD 0x2200
+)
+
+; Set BOOTROM divider to DIV4 and L3 AXI clock to DIV2
+D.S SD:0x70026040 %LE %LONG 0x00001031 
+
+;-------------------------------------------------------------------------------------------
+;                                           INITIALIZE PLL                                  
+;-------------------------------------------------------------------------------------------
+IF &PLL_INIT==1
+(
+    DO PLL_CONFIG_MT6573
+)
+;-------------------------------------------------------------------------------------------
+
+;--------------------------------------------------------------------------------------------------------------------------
+; Singlecore debug is available with Daisy-chaininig enabled and Daisychaining disabled
+; Although the underlying chip-level configuration is different, from a user perspective the environments are the same
+;
+; For singlecore debug (1 x TRACE32 window), this TRACE32 window can be be used to talk to either the AP MCU or the MD MCU
+; For singlecore debug (1 x TRACE32 window), this parameter is used to configure JTAG for AP MCU or MD MCU
+;
+; For multicore debug (2 x TRACE32 windows), this parameter is forced to be 1
+; For multicore debug (2 x TRACE32 windows), this TRACE32 window is always used to communicate with the AP MCU
+;--------------------------------------------------------------------------------------------------------------------------
+IF &MULTICORE_DEBUG_ENABLED==1
+(
+    ;Override the previous setting of &AP_MASTER
+    ;For multicore debug, this TRACE32 window will always be used to talk to the AP MCU
+    &AP_MASTER=1
+    ; Daisychaining is required
+    &DAISYCHAINING_ENABLED=1
+
+    ; Wait for the MD MCU TRACE32 environment to open and listen to INTERCOM
+    INTERCOM.WAIT Localhost:10001
+
+    ;---------------------------------------------------------------------------------------------------------------------------
+    ; Configure the amount of control the master window (AP) has over the slave window (MD) when starting, stopping and setpping
+    ;---------------------------------------------------------------------------------------------------------------------------
+
+    ; Setup SYNCH commands for AP MCU
+    SYNCH.RESet
+    SYNCH.Connect Localhost:10001
+    SYNCH.MasterGo ON
+    SYNCH.MasterBRK ON
+    SYNCH.MasterStep ON
+
+    ; Setup SYNCH commands for MD MCU
+    INTERCOM.execute Localhost:10001 SYNCH.RESet
+    INTERCOM.execute Localhost:10001 SYNCH.Connect Localhost:10000
+    INTERCOM.execute Localhost:10001 SYNCH.SlaveGo OFF
+    INTERCOM.execute Localhost:10001 SYNCH.SlaveBRK OFF
+    INTERCOM.execute Localhost:10001 SYNCH.SlaveStep OFF
+
+    ;------------
+    ; Flag check
+    ;------------
+    ; &MULTICORE_AP_ONLY and &MULTICORE_MD_ONLY must never both be set to 1
+    ; The commands below will detect this a generate an error
+    IF &MULTICORE_AP_ONLY==1
+    (
+        IF &MULTICORE_MD_ONLY==1
+        (
+	    INTERCOM.execute Localhost:10001 STOP "ILLEGAL PARAMETER SETTINGS, &MULTICORE_AP_ONLY and &MULTICORE_MD_ONLY CANNOT BOTH BE SET TO 1"
+            STOP "ILLEGAL PARAMETER SETTINGS, &MULTICORE_AP_ONLY and &MULTICORE_MD_ONLY CANNOT BOTH BE SET TO 1"
+        )
+    )
+)
+
+;--------Select Boot mode--------------------
+; only one of them can be set to 1
+GLOBAL &EXT_RAM
+GLOBAL &INT_RAM
+GLOBAL &EXT_ROM
+
+&EXT_RAM=1
+&INT_RAM=0
+&EXT_ROM=0
+
+;------- EMI Setting ------- 
+
+; Memory is one of the memory configurations shown below
+GLOBAL &Memory 
+&Memory=5
+        ; 1: DDR32-1Gb (Single bank - FPGA)
+        ; 2: DDR2-32-S4-1Gb (Single bank FPGA)
+        ; 3: DDR32-2Gb (Dual bank Bill Kirwin - FPGA)
+        ; 4: DDR32-2Gb (Dual bank WinMo DTB - FPGA)
+        ; 5: DDR32-2Gb (Dual bank WinMo DTB - ASIC)
+        ; 6: DDR2-32-S4-2Gb (Micron dual bank - ASIC)
+
+; Perform ungating of AP and MD subsystems
+IF &FPGA2_SETTING==1
+(
+    D.S SD:0x70026190 %LE %LONG 0x00001101
+    D.S SD:0x70026194 %LE %LONG 0x00001111
+    D.S SD:0x70026198 %LE %LONG 0x00000111
+    D.S SD:0x60140104 %LE %LONG 0x00000110
+    D.S SD:0x60140308 %LE %LONG 0xffffffff
+    D.S SD:0x60140318 %LE %LONG 0xffffffff
+    D.S SD:0x70026308 %LE %LONG 0xffffffff
+    D.S SD:0x70026318 %LE %LONG 0xffffffff
+    D.S SD:0x70026320 %LE %LONG 0x00000000        ; Enable the debug system from the APMCU
+    ;wait 5.s
+)
+
+IF &Memory==1 ; DDR (FPGA)
+(   
+    ;   Full-array self-refresh.
+    D.S SD:0x70000040 %LE %LONG 0x00324000 ; Modified for MT6573
+    
+    ;   We do not have to set Driving on FPGA.
+    ;D.S SD:0x60000078 %LE %LONG 0x00666660
+    ;D.S SD:0x60000080 %LE %LONG 0x00666606
+
+    ;   Set AC Timing Parameters
+    D.S SD:0x70000048 %LE %LONG 0x00061001 ; Modified for MT6573
+    ;D.S SD:0x70000050 %LE %LONG 0x00501000 ; Modified for MT6573
+    D.S SD:0x70000050 %LE %LONG 0x00111000 ; Modified for MT6573 (assumes EMI clock rate = 5MHz on FPGA1)
+    D.S SD:0x70000058 %LE %LONG 0x00011003 ; Modified for MT6573
+    
+    D.S SD:0x70000070 %LE %LONG 0x0000030A ; Do not swap CS0/CS1 internally on FPGA1 (since CS0/CS2 are physcially swapped on FPGA balls)
+    
+    ;   Only enable CS0 for DRAM usage.
+    D.S SD:0x70000088 %LE %LONG 0x00010000 ; Modified for MT6573
+    
+    ;   For WS868, CS0, 128MB DDR32.
+    ;   Note we enable ADDR SWAP here so that we could test PASR at run-time.
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x005B1109 ; Modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x005B1101 ; Modified for MT6573
+    )
+
+    ;   Set MD's S.R. Mode as enabled so we could fully controll EMI's S.R. mode using AP side.
+    ;   Note this register is not present on FPGA0 & FPGA1
+    D.S SD:0x70000098 %LE %LONG 0x00000001 ; Modified for MT6573
+
+    wait 100.ms
+    
+    ;   I sync this flow with datasheet.
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x105B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x085B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x045B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x025B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x015B1109 ; Modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x105B1101 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x085B1101 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x045B1101 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x025B1101 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x015B1101 ; Modified for MT6573
+    )
+    wait 1.ms
+    
+    ;   Temporarily disable REF_FIX_CK since this version FPGA doesn't connect it so EMI can not issue A.R. command.
+    ;      We can also observe this because 
+    ;D.S SD:0x60000068 %LE %LONG 0x00531117
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x005B111B ; Modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x005B1113 ; Modified for MT6573
+    )
+    wait 1.ms
+
+    ;   Set manual DQSI delay value w/o auto tracking.
+    ;D.S SD:0x70000310 %LE %LONG 0x10101010 ; Modified for MT6573
+    D.S SD:0x70000300 %LE %LONG 0x10101010 ; Modified for MT6573
+    wait 1.ms 
+)
+
+IF &Memory==2 ; DDR2 (FPGA)
+(
+    ; Setup DRAM AC timing
+    ; EMI_CONJ
+    ;D.S SD:0x70000048 %LE %LONG 0x00001040	; FPGA
+    D.S SD:0x70000048 %LE %LONG 0x03041250	; RealChip
+    ;D.S SD:0x70000048 %LE %LONG 0x00041240
+
+    ; EMI_CONK
+    ;D.S SD:0x70000050 %LE %LONG 0x00010000	; FPGA
+    D.S SD:0x70000050 %LE %LONG 0x00171100	; RealChip
+    ;D.S SD:0x70000050 %LE %LONG 0x00081100
+
+    ; EMI_CONL
+    ;D.S SD:0x70000058 %LE %LONG 0x00400003	; FPGA
+    D.S SD:0x70000058 %LE %LONG 0x10423003	; RealChip
+
+    ; EMI_DDRV
+    D.S SD:0x70000080 %LE %LONG 0x00000010      ; Modified to support CS0
+
+    ; EMI_GEND - EMI rank select registers
+    D.S SD:0x70000088 %LE %LONG 0x00010000      ; Modified to support CS0
+    
+    ; EMI_CONN - Enable DRAM controller
+    D.S SD:0x70000068 %LE %LONG 0x00650001      ; Rows address = 13, Bank address = 3, Column address = 9 => 1Gb DDR2-32
+    wait 1.ms
+    
+    ; EMI_GENA - Enable DRAM Clock
+    D.S SD:0x70000070 %LE %LONG 0x00000300    
+    wait 1.ms
+    
+    ; EMI_GENA - Enable DDR2 CKE
+    D.S SD:0x70000070 %LE %LONG 0x0000031A  ; External boot should be enabled at this time to allow loading of binaries to external memory    
+    wait 1.ms
+    
+    ; EMI_CONN - Reset DDR2
+    D.S SD:0x70000040 %LE %LONG 0x003F0000
+    D.S SD:0x70000068 %LE %LONG 0x20650001
+    wait 100.ms
+    D.S SD:0x70000068 %LE %LONG 0x00650001
+    wait 1.ms
+    
+    ; Read the DDR2 DAI
+    D.S SD:0x70000040 %LE %LONG 0x00000000
+    D.S SD:0x70000068 %LE %LONG 0x40650001
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00650001
+    wait 1.ms
+    
+    ; DDR2 ZQ Calibration 
+    ;D.S SD:0x70000080 %LE %LONG 0x0000A403
+    D.S SD:0x70000040 %LE %LONG 0xFF0A0000
+    D.S SD:0x70000068 %LE %LONG 0x20650001
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00650001
+    wait 1.ms
+
+    ; Set Device Feature1 - nWR=3, WC=Wrap, BT=sequential, BL=4
+    D.S SD:0x70000040 %LE %LONG 0x22010000
+    D.S SD:0x70000068 %LE %LONG 0x20650001
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00650001
+    wait 1.ms
+    
+    ; Set Device Feature2 - RL3/WL1
+    D.S SD:0x70000040 %LE %LONG 0x01020000
+    D.S SD:0x70000068 %LE %LONG 0x20650001
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00650001
+    wait 1.ms
+
+    ; SHK: Temporarily disable REF_FIX_CK since this version FPGA doesn't connect it so EMI can not issue A.R. command.
+    ;      We can also observe this because 
+    D.S SD:0x70000068 %LE %LONG 0x00650A03	
+    ;D.S SD:0x70000068 %LE %LONG 0x00650917
+    wait 1.ms
+
+    ; SHK: Set manual DQSI delay value w/o auto tracking.
+    D.S SD:0x70000300 %LE %LONG 0x38383838
+    wait 1.ms
+)
+
+IF &Memory==3 ; DDR (FPGA)
+(   
+    ;   Full-array self-refresh.
+    D.S SD:0x70000040 %LE %LONG 0x00324000 ; Modified for MT6573
+    
+    ;   We do not have to set Driving on FPGA.
+    ;D.S SD:0x60000078 %LE %LONG 0x00666660
+    ;D.S SD:0x60000080 %LE %LONG 0x00666606
+
+    ;   Set AC Timing Parameters
+    D.S SD:0x70000048 %LE %LONG 0x00061001 ; Modified for MT6573
+    ;D.S SD:0x70000050 %LE %LONG 0x00501000 ; Modified for MT6573
+    ;D.S SD:0x70000050 %LE %LONG 0x00111000 ; Modified for MT6573 (assumes EMI clock rate = 5MHz on FPGA1)
+    D.S SD:0x70000050 %LE %LONG 0x00021000 ; Modified for MT6573 (assumes fixed clock rate for refresh = 5MHz / 16 = 0.3125MHz)
+    D.S SD:0x70000058 %LE %LONG 0x00011003 ; Modified for MT6573
+        
+    D.S SD:0x70000070 %LE %LONG 0x0000030A ; Modified for MT6573    
+
+    ;   Only enable CS0 & CS1 for DRAM usage.
+    D.S SD:0x70000088 %LE %LONG 0x00030000 ; Modified for MT6573
+    
+    ;   For WS868, CS0, 128MB DDR32.
+    ;   Note we enable ADDR SWAP here so that we could test PASR at run-time.
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x008B1109 ; Modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x008B1101 ;KC/PFT modified for MT6573
+    )
+    ;   Set MD's S.R. Mode as enabled so we could fully controll EMI's S.R. mode using AP side.
+    ;   Note this register is not present on FPGA0 & FPGA1
+    D.S SD:0x70000098 %LE %LONG 0x00000001 ; Modified for MT6573
+
+    wait 100.ms
+    
+    ;   I sync this flow with datasheet.
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x108B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x088B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x048B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x028B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x018B1109 ; Modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x108B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x088B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x048B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x028B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x018B1101 ;KC/PFT modified for MT6573
+    )
+    wait 1.ms
+    
+    ;   Temporarily disable REF_FIX_CK since this version FPGA doesn't connect it so EMI can not issue A.R. command.
+    ;      We can also observe this because 
+    ;D.S SD:0x60000068 %LE %LONG 0x00531117
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x008B111B ; Modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        ;D.S SD:0x70000068 %LE %LONG 0x008B1117 ;KC/PFT modified for MT6573 - Updated to enable REF_FIX_CK (for DCM)
+        D.S SD:0x70000068 %LE %LONG 0x008B3117 ;KC/PFT modified for MT6573 - Updated to enable REF_FIX_CK (for DCM) & Concurrent AP
+    )
+    wait 1.ms
+
+    ;   Set manual DQSI delay value w/o auto tracking.    
+    D.S SD:0x70000300 %LE %LONG 0x10101010 ; Modified for MT6573
+    D.S SD:0x70000308 %LE %LONG 0x10101010 ; Modified for MT6573    
+    
+    wait 1.ms 
+)
+
+IF &Memory==4 ; DDR (FPGA)
+(  
+    ;   Full-array self-refresh.
+    D.S SD:0x70000040 %LE %LONG 0x00324000 ; Modified for MT6573
+    
+    ;   We do not have to set Driving on FPGA.
+    ;D.S SD:0x60000078 %LE %LONG 0x00666660
+    ;D.S SD:0x60000080 %LE %LONG 0x00666606
+
+    ;   Set AC Timing Parameters
+    D.S SD:0x70000048 %LE %LONG 0x00061001 ; Modified for MT6573
+    ;D.S SD:0x70000050 %LE %LONG 0x00501000 ; Modified for MT6573
+    ;D.S SD:0x70000050 %LE %LONG 0x00111000 ; Modified for MT6573 (assumes EMI clock rate = 5MHz on FPGA1)
+    D.S SD:0x70000050 %LE %LONG 0x00021000 ; Modified for MT6573 (assumes fixed clock rate for refresh = 5MHz / 16 = 0.3125MHz)    
+    D.S SD:0x70000058 %LE %LONG 0x00011003 ; Modified for MT6573
+        
+    D.S SD:0x70000070 %LE %LONG 0x0000030A ; Modified for MT6573    
+
+    ;   Only enable CS0 & CS3 for DRAM usage.
+    D.S SD:0x70000088 %LE %LONG 0x00090000 ; 
+    
+    ;   For WS868, CS0, 128MB DDR32.
+    ;   Note we enable ADDR SWAP here so that we could test PASR at run-time.
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x008B1109 ; Modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x008B1101 ;KC/PFT modified for MT6573
+    )
+    ;   Set MD's S.R. Mode as enabled so we could fully controll EMI's S.R. mode using AP side.
+    ;   Note this register is not present on FPGA0 & FPGA1
+    D.S SD:0x70000098 %LE %LONG 0x00000001 ; Modified for MT6573
+
+    wait 100.ms
+    
+    ;   I sync this flow with datasheet.
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x108B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x088B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x048B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x028B1109 ; Modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x018B1109 ; Modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x108B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x088B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x048B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x028B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x018B1101 ;KC/PFT modified for MT6573
+    )
+    wait 1.ms
+    
+    ;   Temporarily disable REF_FIX_CK since this version FPGA doesn't connect it so EMI can not issue A.R. command.
+    ;      We can also observe this because 
+    ;D.S SD:0x60000068 %LE %LONG 0x00531117
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x008B111B ; Modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x008B3117 ;KC/PFT modified for MT6573 - Updated to enable REF_FIX_CK (for DCM) & Concurrent AP
+    )
+    wait 1.ms
+
+    ;   Set manual DQSI delay value w/o auto tracking.    
+    D.S SD:0x70000300 %LE %LONG 0x10101010 ; Modified for MT6573
+    D.S SD:0x70000318 %LE %LONG 0x10101010 ; Modified for MT6573    
+    
+    wait 1.ms 
+)
+
+IF &Memory==5 ; DDR (ASIC)
+(
+    ; Program EMI_CONI - DRAM mode (and extended mode) register values
+    D.S SD:0x70000040 %LE %LONG 0x00324000 
+
+    ; Program Output Driving
+    ; EMI_DRVA 
+    D.S SD:0x700002A8 %LE %LONG 0x88888888 ; Need ETT results 
+    ; EMI_DRVB 
+    D.S SD:0x700002B0 %LE %LONG 0x00880000 ; Need ETT results 
+
+    ; Program AC Timing Parameters for Elpida EHD013151MA device
+    IF &EMI_FREQUENCY==13
+    (
+        ; Program EMI_CONJ
+        D.S SD:0x70000048 %LE %LONG 0x00000000
+
+        ; Program EMI_CONK
+        D.S SD:0x70000050 %LE %LONG 0x000C0000
+
+        ; Program EMI_CONL
+        D.S SD:0x70000058 %LE %LONG 0x00010005
+    )
+    IF &EMI_FREQUENCY==100 
+    (
+        ; Program EMI_CONJ
+        D.S SD:0x70000048 %LE %LONG 0x00050002
+
+        ; Program EMI_CONK
+        D.S SD:0x70000050 %LE %LONG 0x000C0000
+
+        ; Program EMI_CONL
+        D.S SD:0x70000058 %LE %LONG 0x00011005
+    )
+    IF &EMI_FREQUENCY==152
+    (
+        ; Program EMI_CONJ
+        D.S SD:0x70000048 %LE %LONG 0x000B1147
+
+        ; Program EMI_CONK
+        D.S SD:0x70000050 %LE %LONG 0x000C1000
+
+        ; Program EMI_CONL
+        D.S SD:0x70000058 %LE %LONG 0x00013005
+    )
+    IF &EMI_FREQUENCY==166
+    (
+        ; Program EMI_CONJ
+        D.S SD:0x70000048 %LE %LONG 0x000D1249
+
+        ; Program EMI_CONK
+        D.S SD:0x70000050 %LE %LONG 0x000C1000
+
+        ; Program EMI_CONL
+        D.S SD:0x70000058 %LE %LONG 0x00013005
+    )
+    IF &EMI_FREQUENCY==200
+    (
+        ; Program EMI_CONJ
+        D.S SD:0x70000048 %LE %LONG 0x4011248C
+
+        ; Program EMI_CONK
+        D.S SD:0x70000050 %LE %LONG 0x000C2000
+
+        ; Program EMI_CONL
+        D.S SD:0x70000058 %LE %LONG 0x00415005
+    )
+
+    ; Program EMI_IOCL - Setup swap function for LPDDR EVB
+    D.S SD:0x700002B8 %LE %LONG 0x03000000
+    
+    ; Program EMI_GENA - Enable clocks, pause-start signal, external boot
+    D.S SD:0x70000070 %LE %LONG 0x0000030A
+
+    ; Program EMI_GEND (enable DDR CS0 and CS1)
+    D.S SD:0x70000088 %LE %LONG 0x00030000
+
+    ; Initialization of DDR devices (steps followed per DDR device datasheet)
+
+    ; Single Pre-charge All
+    D.S SD:0x70000068 %LE %LONG 0x108B0001
+    wait 1.ms
+    ; Single Auto-refresh 1 Enable
+    D.S SD:0x70000068 %LE %LONG 0x088B0001
+    wait 1.ms
+    ; Single Auto-refresh 2 Enable
+    D.S SD:0x70000068 %LE %LONG 0x048B0001
+    wait 1.ms
+    ; Single Load Mode Register
+    D.S SD:0x70000068 %LE %LONG 0x028B0001
+    wait 1.ms
+    ; Single Extended Mode Register Enable
+    D.S SD:0x70000068 %LE %LONG 0x018B0001
+    wait 1.ms
+
+    ; Update EMI_CONN to enable PDN_EN, CAL_EN (data auto-tracking disabled), AP, and Concurrent AP
+    D.S SD:0x70000068 %LE %LONG 0x008B3117
+    ;D.S SD:0x70000068 %LE %LONG 0x008B3107
+    wait 1.ms
+
+    ; Enable HW DQS auto-tracking
+    ; Set delay function for EMI_DQSA (CS0) and EMI_DQSB (CS1) auto-tracking 
+    D.S SD:0x70000300 %LE %LONG 0x28282828 ; Need ETT results
+    D.S SD:0x70000308 %LE %LONG 0x28282828 ; Need ETT results
+    ; Set EMI_DQSE to enable auto-tracking function for inputs DQS[3:0] of CS0 and CS1
+    D.S SD:0x70000320 %LE %LONG 0x000000FF
+
+    ; Enable Dummy Read (required for HW DQS auto-tracking)
+    ;D.S SD:0x70000078 %LE %LONG 0x8000F003
+    D.S SD:0x70000078 %LE %LONG 0x00000003 ; Required to workaround HWDCM bug
+
+    ; Enable EMI_PPCT performance and power control
+    D.S SD:0x70000090 %LE %LONG 0xFFFF0000
+
+    ; EMI_SLCT - Enable HI Prio for MM1 and MM2 and R/W command favor for all masters
+    D.S SD:0x70000150 %LE %LONG 0x0000037F
+
+    ; EMI_ABCT - Enable 1/32 freq for HWDCM mode and enable arbitration controls (lower_rw, higher_ph, lower_rc)
+    D.S SD:0x70000158 %LE %LONG 0x00070020
+
+    wait 1.ms 
+)
+
+IF &Memory==6 ; DDR2 (ASIC)
+(
+    ; Program AC Timing Parameters for Micron device at 200MHz operation
+    ; EMI_CONJ
+    D.S SD:0x70000048 %LE %LONG 0x04142552
+
+    ; EMI_CONK
+    D.S SD:0x70000050 %LE %LONG 0x00062300
+
+    ; EMI_CONL
+    D.S SD:0x70000058 %LE %LONG 0x24425006
+    
+    ; Program Output Driving
+    ; EMI_DRVA 
+    D.S SD:0x700002A8 %LE %LONG 0x88888888 ; Need ETT results 
+    ; EMI_DRVB 
+    D.S SD:0x700002B0 %LE %LONG 0x00880000 ; Need ETT results 
+	   
+    ; EMI_GEND - Enable DDR2 CS0 and CS1
+    D.S SD:0x70000088 %LE %LONG 0x00030000
+
+    ; Program EMI_IOCL - Setup swap function for LPDDR2 (Note: MT6573 EVB designed for LPDDR)
+    D.S SD:0x700002B8 %LE %LONG 0x05000000 
+    
+    ; EMI_CONN - Enable DRAM controller
+    ; Micron LPDDR2-32-S4 2Gb
+    ; Banks = 8, Rows = 14, Columns = 9
+    D.S SD:0x70000068 %LE %LONG 0x00950801
+    wait 1.ms   
+    
+    ; EMI_GENA - Enable DRAM Clock
+    D.S SD:0x70000070 %LE %LONG 0x00000300
+    wait 1.ms
+    
+    ; EMI_GENA - Enable DDR2 CKE
+    D.S SD:0x70000070 %LE %LONG 0x0000031A
+    wait 1.ms
+    
+    ; EMI_CONN - Reset DDR2
+    D.S SD:0x70000040 %LE %LONG 0x003F0000
+    D.S SD:0x70000068 %LE %LONG 0x20950801
+    wait 100.ms
+    D.S SD:0x70000068 %LE %LONG 0x00950801
+    wait 1.ms
+
+    ; Set EMI_CALE and EMI_CALF for safe latching of input data (recommendation by CC Wen)
+    D.S SD:0x70000350 %LE %LONG 0x1F1F1F1F
+    D.S SD:0x70000358 %LE %LONG 0x1F1F1F1F
+    
+    ; Read the CS0 DDR2 Device Auto-Initialization bit (Note: Polling is not done in CMM file but should be done in driver code)
+    D.S SD:0x70000080 %LE %LONG 0x00000010 ; Configure MRR for CS0
+    D.S SD:0x70000040 %LE %LONG 0x00000000
+    D.S SD:0x70000068 %LE %LONG 0x40950801
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00950801
+    wait 1.ms
+
+    ; Read the CS1 DDR2 Device Auto-Initialization bit (Note: Polling is not done in CMM file but should be done in driver code)
+    D.S SD:0x70000080 %LE %LONG 0x00000020 ; Configure MRR for CS1
+    D.S SD:0x70000040 %LE %LONG 0x00000000
+    D.S SD:0x70000068 %LE %LONG 0x40950801
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00950801
+    wait 1.ms
+    
+    ; DDR2 ZQ Calibration for CS0
+    ; MR10: 1111 1111B - Calibration command after initialization
+    D.S SD:0x70000080 %LE %LONG 0x00000012 ; Configure MRW for CS0 
+    D.S SD:0x70000040 %LE %LONG 0xFF0A0000
+    D.S SD:0x70000068 %LE %LONG 0x20950801
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00950801
+    wait 1.ms
+
+    ; DDR2 ZQ Calibration for CS1
+    ; MR10: 1111 1111B - Calibration command after initialization
+    D.S SD:0x70000080 %LE %LONG 0x00000022 ; Configure MRW for CS1 
+    D.S SD:0x70000040 %LE %LONG 0xFF0A0000
+    D.S SD:0x70000068 %LE %LONG 0x20950801
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00950801
+    wait 1.ms
+
+    ; Program MRW to select DRAM_CS_EN (instead of MRW_CS_SEL)
+    D.S SD:0x70000080 %LE %LONG 0x00000000
+
+    ; Program DRAM latencies and access types for 200MHz operation
+    ; Set Device Feature1
+    ; MR1: 0x22 - nWR=3 (tWR/tCK), WC=0(wrap), BT=0(sequential), BL=4 (only burst length = 4 supported by EMI)
+    D.S SD:0x70000040 %LE %LONG 0x22010000
+    D.S SD:0x70000068 %LE %LONG 0x20950801
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00950801
+    wait 1.ms
+
+    ; Program DRAM latencies and access types for 200MHz operation
+    ; Set Device Feature2
+    ; MR2: 0x01 - Read Latency & Write Latency: RL = 3, WL = 1 (settings for 200MHz operation)
+    D.S SD:0x70000040 %LE %LONG 0x01020000
+    D.S SD:0x70000068 %LE %LONG 0x20950801
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00950801
+    wait 1.ms
+
+    ; ***********************************************************************
+    ; Switch EMI PLL to 200MHz
+    ;
+    ; Note that in MT6255 the PLL is increased immediately after ZQ
+    ; calibration. However, this seems to violate the steps outlined in the
+    ; DDR2 spec. (B.1.9).
+    ; 
+    ; ***********************************************************************
+    &EMI_FREQUENCY=200
+    &EMI_ONLY=0
+    &EMI_INIT=1
+    &EMI_CHANGE=0
+    &ALL_PLLS=1
+    &APM_INIT=1
+    &SYSCLK_FROM_AUXADC=0
+    DO PLL_CONFIG_MT6573
+    wait 100.ms
+
+    ; Set delay function for EMI_DQSA (CS0) and EMI_DQSB (CS1) auto-tracking 
+    D.S SD:0x70000300 %LE %LONG 0x58585858 ; Need ETT results (default values from MT6255)
+    D.S SD:0x70000308 %LE %LONG 0x58585858 ; Need ETT results (default values from MT6255)
+
+    ; Enable HW DQS auto-tracking
+    ; Set EMI_DQSE to enable auto-tracking function for inputs DQS[3:0] of CS0 and CS1
+    D.S SD:0x70000320 %LE %LONG 0x000000FF
+    wait 1.ms
+
+    ; EMI_CONN - Enable AP, REF_PB_EN, CAL_EN, REF_FIX_CK, REF_CNT_EN
+    D.S SD:0x70000068 %LE %LONG 0x00951B17
+    wait 1.ms
+        
+    ; Enable Dummy Read (required for HW DQS auto-tracking)
+    ;D.S SD:0x70000078 %LE %LONG 0x8000F003    
+    D.S SD:0x70000078 %LE %LONG 0x00000003 ; Required to workaround HWDCM bug
+
+    ; Enable EMI_PPCT performance and power control
+    D.S SD:0x70000090 %LE %LONG 0xFFFF0000
+
+    ; EMI_SLCT - Enable HI Prio for MM1 and MM2 and R/W command favor for all masters
+    D.S SD:0x70000150 %LE %LONG 0x0000037F
+
+    ; EMI_ABCT - Enable 1/32 freq for HWDCM mode and enable arbitration controls (lower_rw, higher_ph, lower_rc)
+    D.S SD:0x70000158 %LE %LONG 0x00070020   
+
+    wait 1.ms
+)
+
+wait 100.ms 
+
+;=============================================================================
+
+; Switching to daisychain mode will cause the TRACE32 tool to lose connectivity with the core
+; The TRACE32 will beep (annoying) unless you mask it
+SETUP.SOUND OFF
+
+IF &DAISYCHAINING_ENABLED!=0
+(
+    ;---- Serial JTAG specific AP ARM11 ----
+    ; JTAG serial scan HW defaults to non-daisychain mode
+    ; i.e. AP & MD are NOT both connected in the serial scan path
+    ; AP JTAG is connected by default    (i.e. *0x700FA034 = 0x1 at reset)
+    ; MD JTAG is disconnected by default (i.e. *0x700FA038 = 0x0 at reset)
+    ;
+
+    ;------------------------------------
+    ; Enable the debug system (from the AP MCU)
+    D.S. SD:0x70026320 %LE %LONG 0x00000000
+    ;------------------------------------
+
+    ;------------------------------------
+    ; Unlock the address range 0x700FA0xx (from the AP MCU)
+    D.S. SD:0x700FAFB0 %LE %LONG 0xC5ACCE55
+    ;------------------------------------
+
+    ;------- Write MD MCU instruction 'Branch 0' to address 0x00000000
+    D.A ZSD:0x00000000 B 0x0
+
+    IF &AP_MASTER==0
+    (
+        ;Release MD MCU from reset
+	; Only the MD MCU is being run
+	; The MD MCU must be out of reset in order for TRACE32 to be able to communicate with it via JTAG
+	; On releasing the MD MCU from reset, it will start executing the 'BR 0x0' command at address 0x0
+        D.S SD:0x60140010 %LE %LONG 0x00011111
+    )
+
+    IF &MULTICORE_DEBUG_ENABLED==1
+    (
+        ;Release MD MCU from reset
+        ; Both the AP MCU & the MD MCU are being run
+	; The MD MCU must be out of reset in order for TRACE32 to be able to communicate with it via JTAG
+	; On releasing the MD MCU from reset, it will start executing the 'BR 0x0' command at address 0x0
+        D.S SD:0x60140010 %LE %LONG 0x00011111
+    )
+
+    ; Needed by Codeviser
+    system.option TURBO OFF
+
+    ;------------------------------------
+    ; Enable H/W Daisy Chaining
+    ; Causes an 'emulation debug port fail' error on TRACE32 tool
+    ; As a result, the TRACE32 tool loses it's connection with the AP MCU core
+    ; We must re-attach to re-establish connectivity with the selected core
+    D.S. SD:0x700FA034 %LE %LONG 0x00000001    ; AP MCU
+    D.S. SD:0x700FA038 %LE %LONG 0x00000001    ; MD MCU
+    ;------------------------------------
+
+    ;system.option TURBO ON
+
+    ; Needed by Codeviser
+    system.down
+
+    IF &AP_MASTER==1
+    (
+        ; Connect to AP with daisychain mode enabled (both cores in the JTAG scan path)
+        System.MultiCore IRPRE 5.
+        System.MultiCore DRPRE 1.
+        System.MultiCore IRPOST 0.
+        System.MultiCore DRPOST 0.
+        ; Core 1 in Chip 1
+        System.MultiCore CORE 1 1
+    )
+
+    IF &AP_MASTER==0
+    (
+        ; Connect to MD with daisychain mode enabled (both cores in the JTAG scan path)
+        System.MultiCore IRPRE 0.
+        System.MultiCore DRPRE 0.
+        System.MultiCore IRPOST 5.
+        System.MultiCore DRPOST 1.
+        ; Core 2 in Chip 1
+        System.MultiCore CORE 2 1
+    )
+
+    SYStem.mode.attach
+
+    IF &AP_MASTER==0
+    (
+        ;------------------------------------
+        ; Enable the debug system (from the MD MCU)
+        D.S. SD:0x70026320 %LE %LONG 0x00000000
+        ;------------------------------------
+
+        ;------------------------------------
+        ; Unlock the address range 0x700FA0xx (from the MD MCU)
+        D.S. SD:0x700FAFB0 %LE %LONG 0xC5ACCE55
+        ;------------------------------------
+
+        ; 0x700FA034 should be 1 (APMCU switched into the JTAG path)
+	; 0x700FA038 should be 1 (MDMCU switched into the JTAG path)
+    )
+)
+ELSE
+(
+    IF &PLATFORM_TYPE>0
+    (
+        ;------------------------------------
+        ; Enable the debug system (from the APMCU)
+        D.S. SD:0x70026320 %LE %LONG 0x00000000
+        ;------------------------------------
+
+        ;------------------------------------
+        ; Unlock the address range 0x700FA0xx (from the APMCU)
+        D.S. SD:0x700FAFB0 %LE %LONG 0xC5ACCE55
+        ;------------------------------------
+
+        ; Platform is not FPGA (so it must be E1, E2 etc etc
+        IF &AP_MASTER==1
+        (
+            ; Connect to AP with daisychain mode disabled (only AP MCU core in the JTAG scan path)
+            ; These are actually the default values so there is no net change here
+            ; The JTAG path is therefore NOT disturbed
+            D.S. SD:0x700FA034 %LE %LONG 0x00000001    ; AP MCU
+            D.S. SD:0x700FA038 %LE %LONG 0x00000000    ; MD MCU
+        )
+
+        IF &AP_MASTER==0
+        (
+            ;------- Write MD MCU instruction 'Branch 0' to address 0x00000000
+            D.A ZSD:0x00000000 B 0x0
+
+            ;Release MD MCU from reset
+            ;The MD MCU must be out of reset in order for TRACE32 to be able to communicate with it via JTAG
+            ; On releasing the MD MCU from reset, it will start executing the 'BR 0x0' command at address 0x0
+            D.S SD:0x60140010 %LE %LONG 0x00011111
+
+            ; Connect to the MDMCU with daisychain mode disabled (only MD MCU core in the JTAG scan path)
+
+            ; To do this we must follow the sequence below
+	    ; a) Using the APMCU, bring the MD MCU into the JTAG path with the APMCU, thus enabling daisychaining
+            ;    This causes an 'emulation debug port fail' error on TRACE32 tool
+            ;    As a result, the TRACE32 tool loses it's connection with the APMCU core
+            ; b) Select the MDMCU via the PRE/POST parameters
+	    ; c) 'Re-attach' to re-establish connectivity with the MDMCU core
+	    ; d) Now we can use the MDMCU to switch the APMCU out of the JTAG path
+            ;    This causes an 'emulation debug port fail' error on TRACE32 tool
+            ;    As a result, the TRACE32 tool loses it's connection with the MDMCU core
+            ; e) Now that there is only 1 core in the JTAG path (the MDMCU), return PRE/POST parameters to their default values of all 0s
+	    ; f) 'Re-attach' to re-establish connectivity with the MDMCU core
+            ; Now we are connected to the MD MCU only
+
+            ; Needed by Codeviser
+            system.option TURBO OFF
+
+            ;a)
+            D.S. SD:0x700FA038 %LE %LONG 0x00000001    ; MD MCU
+
+            ; Needed by Codeviser
+            system.down
+
+            ;b)
+            ; Connect to MD with daisychain mode enabled (both cores in the JTAG scan path)
+            System.MultiCore IRPRE 0.
+            System.MultiCore DRPRE 0.
+            System.MultiCore IRPOST 5.
+            System.MultiCore DRPOST 1.
+
+            ;c)
+            SYStem.mode.attach
+
+            ;d)
+            D.S. SD:0x700FA034 %LE %LONG 0x00000000    ; AP MCU
+
+            ; Needed by Codeviser
+            system.down
+
+            ;e)
+            System.MultiCore IRPRE 0.
+            System.MultiCore DRPRE 0.
+            System.MultiCore IRPOST 0.
+            System.MultiCore DRPOST 0.
+
+            ;f)
+            SYStem.mode.attach
+
+            ;------------------------------------
+            ; Enable the debug system from the MD MCU
+            D.S. SD:0x70026320 %LE %LONG 0x00000000
+            ;------------------------------------
+
+            ;------------------------------------
+            ; Unlock the address range 0x700FA0xx from the MD MCU
+            D.S. SD:0x700FAFB0 %LE %LONG 0xC5ACCE55
+            ;------------------------------------
+
+            ; 0x700FA034 should be 0 (APMCU switched out of the JTAG path)
+	    ; 0x700FA038 should be 1 (MDMCU switched into the JTAG path)
+        )
+    )
+)
+
+; Re-enable TRACE32 sounds
+SETUP.SOUND ERROR
+
+;GOTO END
+
+IF &MULTICORE_DEBUG_ENABLED==1
+(
+    INTERCOM.execute Localhost:10001 DO MD_DUAL_JTAG_MT6573.cmm
+)
+
+IF &MULTICORE_DEBUG_ENABLED==1
+(
+    GLOBAL &mdmcu_load_done
+    &mdmcu_load_done=0
+
+    WHILE &mdmcu_load_done==0
+    (
+        ; Check to make sure that the MD MCU TRACE32 environment has finished loading the MD symbols
+        INTERCOM.evaluate Localhost:10001 Register(R0)
+        &mdmcu_load_done=EVAL()
+        PRINT &mdmcu_load_done
+    )
+)
+
+IF &PLATFORM_TYPE==0
+(
+    IF &AP_MASTER==1
+    (   
+        IF &MULTICORE_DEBUG_ENABLED==0
+        (
+            IF (&Memory==2)
+            (
+                D.S SD:0x70000070 %LE %LONG 0x00000318 ; Set EMI_GENA for internal boot (DDR2 setting)
+            )
+            ELSE
+            (
+                D.S SD:0x70000070 %LE %LONG 0x00000308 ; Set EMI_GENA for internal boot (DDR1 setting)
+            )
+        )
+        ELSE
+        (
+            IF &MULTICORE_MD_ONLY==0
+            (
+                ; Not multicore MD-only so configure EMI for internal boot
+	        ; For the multicore MD-only case, the EMI must remain configured for external boot
+                IF (&Memory==2)
+                (
+                    D.S SD:0x70000070 %LE %LONG 0x00000318 ; Set EMI_GENA for internal boot (DDR2 setting)
+                )
+                ELSE
+                (
+                    D.S SD:0x70000070 %LE %LONG 0x00000308 ; Set EMI_GENA for internal boot (DDR1 setting)
+                )
+	    )
+        )
+    )
+)
+
+&DEBUG_TARGET=0
+; 0 = TARGET.
+; 1 = SIMULATOR.
+
+;;;;;;;;;;;;;;;;;;
+;   For Target.
+;;;;;;;;;;;;;;;;;;
+IF &DEBUG_TARGET==0
+(
+    Break.Select Program OnChip
+    Break.Select Hll OnChip
+    Break.Select Spot OnChip
+    Break.Select Read OnChip
+    Break.Select Write OnChip
+)
+IF &DEBUG_TARGET==1
+(
+    Break.Select Program SOFT
+    Break.Select Hll SOFT
+    Break.Select Spot SOFT
+    Break.Select Read SOFT
+    Break.Select Write SOFT
+)
+
+
+;winclear ; Modifed
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Debug Window here.
+; WinPOS X-axis Y-Axis DataDumpWitdh Row DataAddressRow DataAddressColumn 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; EMI view
+;WinPOS 200. -1. 80. 16. 0. 0.
+;Data.dump 0x70000000 /long ; Modified for MT6573
+; System L2 view
+;WinPOS 200. 19. 80. 2. 0. 0.
+;Data.dump 0x70010000 /long ; Modified for MT6573
+; UART1 view
+;WinPOS 200. 25. 80. 2. 0. 0.
+;Data.dump 0x70030000 /long ; Modified for MT6573
+; Register view
+;WinPOS 200. 31. 80. 10. 0. 0.
+;Register
+; IRQ view
+;WinPOS 200. 45. 60. 2. 0. 0.
+;Data.dump 0x70800000 /word ; Modified for MT6573
+; DMA view
+;WinPOS 200. 51. 60. 1. 0. 0.
+;Data.dump 0x70020000 /long ; Modified for MT6573
+; Break Point view
+;WinPOS 200. 56. 60. 60. 0. 0.
+;B::Break.List
+; Source view
+;WinPOS 0. -1. 150. 60. 0. 0.
+;Data.List
+; CMM view
+;WinPOS 0. 65. 100. 45. 0. 0.
+;B::CD.PEDIT .\MT6276_DDR32.cmm
+
+enddo
+

@@ -1,0 +1,98 @@
+
+&UbootImgStart=0x00000000  // Jau modify 0x40004000 --> 0x40002000 to fit WCT's requirement
+&UbootJumpStart=0x00000200
+
+SYStem.Down
+;Break.Delete				; Erase default breakpoints
+MAP.RESet					; Reset mapping system to default state
+sYmbol.RESet                ; All symbols and search paths for source file are cleared
+MMU.RESet                   ; The translation table is cleared and all setup's are set to the defaults
+SYStem.RESet				; Reset all system settings and switch to down state
+
+System.CPU ARM926EJ
+System.Option Cflush on    	; Flush the cache to avoid data consistency
+System.JtagClock Rtck
+System.Option EnReset off
+
+TrOnchip.Set DABORT off     ; Disable for linux page fault handling
+TrOnchip.Set PABORT off		; Disable for linux page fault handling
+TrOnchip.Set UNDEF off		; Disable for linux pate fault handling
+SYStem.Option MMU off
+
+SYStem.Up
+Register.REset
+
+SETUP.IMASKASM	ON          ; Disbale interrupt during assembly step
+SETUP.IMASKHLL	ON          ; Disbale interrupt during C step
+
+D.S C15:0x1 0				; Turn off MMU
+
+
+Break.SELect Program OnChip ; set_hw_breakpoint_by_def   Jau add
+;Break.SELect Hll OnChip     ; setting attribute of breakpoints
+;Break.SELect Spot OnChip
+Break.SELect Read OnChip
+Break.SELect Write OnChip
+
+
+
+Y.SPATH.RESET ; reset all source path
+
+Y.SPATH.SRD ../board/mt6516
+Y.SPATH.SRD ../common
+Y.SPATH.SRD ../cpu/arm926ejs
+Y.SPATH.SRD ../drivers/
+Y.SPATH.SRD ../include
+Y.SPATH.SRD ../lib_arm
+Y.SPATH.SRD ../disk
+Y.SPATH.SRD ../fs/fat
+Y.SPATH.SRD ../fs/fdos
+Y.SPATH.SRD ../post
+Y.SPATH.SRD ../tools
+
+screen.on
+area.reset
+
+    ;D.S SD:0x80020070 %LE %LONG 0x0000030A  ; GENA 
+    ;D.S SD:0x80020088 %LE %LONG 0x0001000E  ; GEND 
+
+    ;D.S SD:0x80020040 %LE %LONG 0x00314000  ; CONI
+    ;D.S SD:0x80020048 %LE %LONG 0x2DA12620  ; CONJ
+    ;D.S SD:0x80020050 %LE %LONG 0x00180000  ; CONK
+    ;D.S SD:0x80020058 %LE %LONG 0x00015004  ; CONL
+    ;D.S SD:0x800200D8 %LE %LONG 0x22220000  ; DELI
+    ;D.S SD:0x800200E0 %LE %LONG 0x02000000  ; DELJ 
+    ;D.S SD:0x800201A0 %LE %LONG 0x00000223  ; DRCT (dummy read control)        
+    ;D.S SD:0x800201B0 %LE %LONG 0x98989898  ; DQSA
+
+    ;D.S SD:0x80020078 %LE %LONG 0x00666660  ; GENB
+    ;D.S SD:0x80020080 %LE %LONG 0x00666666  ; GENC
+
+    ;D.S SD:0x80001700 %LE %LONG 0x05000001  ; PINMUXCFG
+
+    ;D.S SD:0x80020068 %LE %LONG 0x10530001 ;
+    ;D.S SD:0x80020068 %LE %LONG 0x08530001 ;
+    ;D.S SD:0x80020068 %LE %LONG 0x04530001 ;
+    ;D.S SD:0x80020068 %LE %LONG 0x02530001 ;
+    ;D.S SD:0x80020068 %LE %LONG 0x01530001 ;
+    ;D.S SD:0x80020068 %LE %LONG 0x00530113 ; 
+
+
+print "loading u-boot image"
+d.load.binary ../u-boot.bin &UbootImgStart
+d.load.elf ../u-boot /gnu /nocode
+;b.s start_armboot /PROGRAM /ONCHIP
+b.s reset /PROGRAM /ONCHIP         ; Jau
+;b.s 0x40004000 /PROGRAM /ONCHIP         ; Jau
+r.s pc &UbootJumpStart
+;go
+d.s SD:0x80003000 %LE %LONG 0x00002220  ; Jau disable hw watchdog timer
+
+;wait !run()
+do windows.cmm
+;do u-boot_breakpoints.cmm
+
+; Jau add
+Break.SELect Program OnChip
+Break.SELect Read OnChip
+Break.SELect Write OnChip

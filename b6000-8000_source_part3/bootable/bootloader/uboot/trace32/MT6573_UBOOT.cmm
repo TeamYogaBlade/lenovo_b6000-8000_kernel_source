@@ -1,0 +1,51 @@
+
+SYStem.RESet
+SYStem.CPU ARM1176JZ
+SYStem.JtagClock Rtck
+System.Option Cflush on         ;flush the cache to avoid data consistency
+System.Option ResBreak off      ;Don't hold the ARM11 core after reset
+;System.Option EnReset off
+System.Option EnReset on
+SYStem.Up
+setup.IMASKHLL ON
+setup.IMASKASM ON
+
+wait 100.ms
+
+; set_hw_breakpoint_by_def
+; setting attribute of breakpoints
+Break.Select Program OnChip
+Break.Select Hll OnChip
+Break.Select Spot OnChip
+Break.Select Read OnChip
+Break.Select Write OnChip
+
+D.S C15:0x1 0				; Turn off MMU
+
+;
+; board init
+;
+;do MT6573_FPGA_DDR.cmm
+do MT6573_EVB_DDR.cmm
+
+print "loading u-boot image"
+d.load.elf ../u-boot /gnu
+
+print "loading bootimg image"
+;d.load.binary ../boot.img 0x10000000 /word /noclear
+
+Y.SPATH.RESET ; reset all source path
+Y.SPATH.SRD ../board/mt6573
+Y.SPATH.SRD ../common
+Y.SPATH.SRD ../arch/arm/cpu/arm1176
+Y.SPATH.SRD ../drivers/
+Y.SPATH.SRD ../include
+Y.SPATH.SRD ../arch/arm/lib
+Y.SPATH.SRD ../disk
+Y.SPATH.SRD ../fs/fat
+Y.SPATH.SRD ../fs/fdos
+Y.SPATH.SRD ../lib
+Y.SPATH.SRD ../tools
+
+enddo
+

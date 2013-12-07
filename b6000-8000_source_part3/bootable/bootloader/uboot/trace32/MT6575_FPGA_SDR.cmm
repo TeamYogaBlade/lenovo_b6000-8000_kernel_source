@@ -1,0 +1,39 @@
+    ;[20100128 PangYen <]
+    ;EMI inialization
+    D.S SD:0xC0003000 %LE %LONG 0x3012 ; one channel 
+    
+    ;DRAM controller initialization, channel 0
+    D.S SD:0xC00040e4 %LE %LONG 0x00000004
+    ;wait for 200 clock cycles
+wait 1.ms
+    D.S SD:0xC0004088 %LE %LONG 0x00000021 ;MRS: BL2, CL2
+    D.S SD:0xC00041e4 %LE %LONG 0x00000010 ;NOP enable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000000 ;disable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000004 ;PREA enable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000000 ;disable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000008 ;1st REF enable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000000 ;disable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000008 ;2nd REF enable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000000 ;disable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000008 ;3rd REF enable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000000 ;disable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000008 ;4th REF enable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000000 ;disable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000008 ;5th REF enable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000000 ;disable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000008 ;6th REF enable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000000 ;disable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000008 ;7th REF enable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000000 ;disable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000008 ;8th REF enable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000000 ;disable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000001 ;MRS write enable
+    D.S SD:0xC00041e4 %LE %LONG 0x00000000 ;disable
+    D.S SD:0xC0004000 %LE %LONG 0x22021124 ;AC Timing setting
+    D.S SD:0xC0004004 %LE %LONG 0x00000441 ;TRRD, Burst length, bus width
+    D.S SD:0xC0004008 %LE %LONG 0x0000000d ;REF rate 7.8us for 27MHz clock
+;    D.S SD:0xC0004008 %LE %LONG 0x00000005 ;REF rate 7.8us for 24MHz clock
+    D.S SD:0xC000407c %LE %LONG 0x00002010 ;AC Timing setting (TRTP,TR2W)
+    D.S SD:0xC00041e0 %LE %LONG 0x20000000 ;enable CTO protocol
+
+enddo

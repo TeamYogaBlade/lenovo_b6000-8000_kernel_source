@@ -1,0 +1,607 @@
+IF (&EMI_ONLY==1)
+(
+    IF (&EMI_INIT==1)
+    (
+        ;;;;;;;;;;;;;
+        ; Reset EPLL
+        ;;;;;;;;;;;;;
+        
+        ;//////////////////////////////////////////////////////
+        ;// Bypass all EPLL (program default value explicitly)
+        ;//////////////////////////////////////////////////////
+        ;PLL_CON4_REG &= 0xFF0F;   // Set clock source for EMI to be the 26MHz system clock (from radio clock)
+        per.set.field SD:0x7002E110 %WORD 0x00F0 0
+        ;;;;;per.set.field SD:0x90000110 %WORD 0x00F0 0
+        
+        ;/////////////////////////////////////////////////////////////////////////////////////////////
+        ;// Explicitly configure EPLL CON0 & CON1 registers to their default values
+        ;/////////////////////////////////////////////////////////////////////////////////////////////
+        
+        ;EPLL_CON1_REG = 0x0100;
+        D.S SD:0x7002E1C4 %LE %WORD 0x0100
+        ;;;;;D.S SD:0x900001C4 %LE %WORD 0x0100
+        
+        ;EPLL_CON0_REG = 0x0000;
+        D.S SD:0x7002E1C0 %LE %WORD 0x0000
+        ;;;;;D.S SD:0x900001C0 %LE %WORD 0x0000
+        
+        ;;;;;;;;;;;;;;;;;;
+        ; Initialize EPLL
+        ;;;;;;;;;;;;;;;;;;
+        
+        ;////////////////////////////////////////
+        ;// Start EPLL Initialization Sequence
+        ;////////////////////////////////////////
+        
+        ;// EMI PLL
+        ;// Set lock timer to 9uS
+        ;// Enable synchronous shutdown/transition
+        ;// Enable reference clock outside of lock
+
+        ;//EPLL_CON0_REG = 0x006C
+        per.set.field SD:0x7002E1C0 %WORD 0x00FF 0x6C
+        ;;;;;per.set.field SD:0x900001C0 %WORD 0x00FF 0x6C
+
+        IF &EMI_FREQUENCY==200
+        (        
+            ;//EPLL_CON0_REG |= (EMI_201_5_MHz);               // EMI defaults to 403.0MHz/2 = 201.5MHz
+            ;per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x70
+            ;;;;;per.set.field SD:0x900001C0 %WORD 0xFF00 0x70
+        
+            ;//EPLL_CON0_REG |= (0x006C | EMI_195_0_MHz);      // EMI defaults to 390.0MHz/2 = 195.0MHz   
+            per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x6F
+        )
+	        
+        IF &EMI_FREQUENCY==166
+        (        
+            ;//EPLL_CON0_REG |= (0x006C | EMI_165_75_MHZ);     // EMI defaults to 331.5MHz/2 = 165.75MHz
+            per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x00
+        )
+
+        IF &EMI_FREQUENCY==152
+        (        
+            ;//EPLL_CON0_REG |= (0x006C | EMI_152_75_MHZ);     // EMI defaults to 305.5MHz/2 = 152.75MHz
+            per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x65
+        )
+
+        IF &EMI_FREQUENCY==100
+        (        
+            ;//EPLL_CON0_REG |= (0x006C | EMI_101_85_MHZ);     // EMI defaults to 203.7MHz/2 = 101.85MHz
+            per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x53
+        )
+
+        IF &EMI_FREQUENCY==13
+        (        
+            ;//EPLL_CON0_REG |= (0x006C | EMI_13_MHZ);         // EMI defaults to  26.0MHz/2 = 13.0MHz 
+            per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x02
+        )
+	        
+        ;// Enable EPLL
+        ;//EPLL_CON0_REG |= 0x0001;
+        per.set.field SD:0x7002E1C0 %WORD 0x0001 1
+        ;;;;;per.set.field SD:0x900001C0 %WORD 0x0001 1
+        
+        ;// Wait for lock
+        wait 1.ms
+        
+        ;///////////////////////////////////
+        ;// Switch PLL control to HW control
+        ;///////////////////////////////////
+        ;EPLL_CON1_REG &= 0xFEFF;     // EPLL enable source = system power-down/reset control (not EMI_PLL_EN bit in EPLL_CON0_REG)
+        per.set.field SD:0x7002E1C4 %WORD 0x0100 0
+        ;;;;;per.set.field SD:0x900001C4 %WORD 0x0100 0
+        
+        ;/////////////////////////////////////////////////////
+        ;// Switch clock from 26MHz Radio Clock to PLL outputs
+        ;/////////////////////////////////////////////////////
+        ;PLL_CON4_REG |= 0x0010;    // Select PLL o/p as clock source for EMI
+        per.set.field SD:0x7002E110 %WORD 0x0010 1
+        ;;;;;per.set.field SD:0x90000110 %WORD 0x0010 1
+    )
+    ELSE
+    (
+        IF (&EMI_CHANGE==1)
+        (
+            IF &EMI_FREQUENCY==200
+            (        
+                ;EPLL_CON0_REG |= (EMI_201_5_MHz);        // EMI defaults to 403.0MHz/2 = 201.5MHz
+                ;per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x70
+
+                ;//EPLL_CON0_REG |= (EMI_195_0_MHz);      // EMI defaults to 390.0MHz/2 = 195.0MHz   
+                per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x6F
+            )
+        
+            IF &EMI_FREQUENCY==166
+            (        
+                ;//EPLL_CON0_REG |= (EMI_165_75_MHZ);     // EMI defaults to 331.5MHz/2 = 165.75MHz
+                per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x00
+            )        
+
+            IF &EMI_FREQUENCY==152
+            (        
+                ;//EPLL_CON0_REG |= (EMI_152_75_MHZ);     // EMI defaults to 305.5MHz/2 = 152.75MHz
+                per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x65
+            )
+	            
+            IF &EMI_FREQUENCY==100
+            (        
+                ;//EPLL_CON0_REG |= (EMI_101_85_MHZ);     // EMI defaults to 203.7MHz/2 = 101.85MHz
+                per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x53
+            )
+	            
+            IF &EMI_FREQUENCY==13
+            (        
+                ;//EPLL_CON0_REG |= (EMI_13_MHZ);         // EMI defaults to  26.0MHz/2 = 13.0MHz 
+                per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x02        
+            )
+        )
+    )
+)
+ELSE
+(
+    ;;;;;;;;;;;;
+    ; Reset PLL
+    ;;;;;;;;;;;;
+    
+    ;//////////////////////////////////////////////////////
+    ;// Bypass all PLLs (program default values explicitly)
+    ;//////////////////////////////////////////////////////
+    IF &EMI_INIT==1
+    (
+        IF &ALL_PLLS==1
+        (
+            ;PLL_CON4_REG &= 0x0000;   // Set clock sources for CAMERA, FCORE, EMI & MDMCU to be the 26MHz system clock (from radio clock)
+            D.S SD:0x7002E110 %LE %WORD 0x0000
+        )
+        ELSE
+        (
+            ;PLL_CON4_REG &= 0x000F;   // Set clock sources for FCORE, EMI & MDMCU to be the 26MHz system clock (from radio clock)
+                                   ;   // Do not touch CAMERA
+            ;D.S SD:0x7002E110 %LE %WORD 0x0000
+            per.set.field SD:0x7002E110 %WORD 0xFFF0 0x0
+        )
+    )
+    ELSE
+    (
+    	;&EMI_INIT==0
+        IF &ALL_PLLS==1
+        (
+            ;PLL_CON4_REG &= 0x00F0;   // Set clock sources for CAMERA, FCORE & MDMCU to be the 26MHz system clock (from radio clock)
+                                   ;   // Do not touch EMI
+            ;D.S SD:0x7002E110 %LE %WORD 0x0000
+            per.set.field SD:0x7002E110 %WORD 0xFF0F 0x0
+        )
+        ELSE
+          (
+            ;PLL_CON4_REG &= 0x00FF;   // Set clock sources for FCORE & MDMCU to be the 26MHz system clock (from radio clock)
+                                   ;   // Do not touch EMI or CAMERA
+            ; Q. How do I do a read/modify/write in TRACE32 ?
+            ;D.S SD:0x7002E110 %LE %WORD 0x0000
+            per.set.field SD:0x7002E110 %WORD 0xFF00 0x0
+          )
+    )
+    
+    IF &APM_INIT==1
+    (
+        ;PLL_CON5_REG &= 0x0000;   // Set clock sources for APMCU, 3G, 2G & MSDC to be the 26MHz system clock (from radio clock)
+        D.S SD:0x7002E114 %LE %WORD 0x0000
+    )
+    ELSE
+    (
+        ;PLL_CON5_REG &= 0xF000;   // Set clock sources for 3G, 2G & MSDC to be the 26MHz system clock (from radio clock)
+                               ;   // Do not touch APMCU
+        ;D.S SD:0x7002E114 %LE %WORD 0x0000
+        per.set.field SD:0x7002E114 %WORD 0x0FFF 0x0
+    )
+    
+    IF &ALL_PLLS==1
+    (
+        ;PLL_CON6_REG &= 0x0000;   // Set clock sources for THREED, FG, AUX, TV & USB to be the 26MHz system clock (from radio clock)
+        D.S SD:0x7002E118 %LE %WORD 0x0000
+    )
+    
+    ;/////////////////////////////////////////////////////////////////////////////////////////////
+    ;// Explicitly configure all PLL CON0 & CON1 registers to their default values
+    ;/////////////////////////////////////////////////////////////////////////////////////////////
+    ;MPLL_CON1_REG = 0x0100;
+    D.S SD:0x7002E144 %LE %WORD 0x0100
+    
+    ;MPLL_CON0_REG = 0x0000;
+    D.S SD:0x7002E140 %LE %WORD 0x0000
+    
+    ;DPLL_CON1_REG = 0x0100;
+    D.S SD:0x7002E184 %LE %WORD 0x0100
+    
+    ;DPLL_CON0_REG = 0x0000;
+    D.S SD:0x7002E180 %LE %WORD 0x0000
+    
+    ;WPLL_CON0_REG = 0x0300;
+    D.S SD:0x7002E240 %LE %WORD 0x0300
+    
+    ;GPLL_CON0_REG = 0x0300;
+    D.S SD:0x7002E280 %LE %WORD 0x0300
+    
+    IF &EMI_INIT==1
+    (
+        ;EPLL_CON1_REG = 0x0100;
+        D.S SD:0x7002E1C4 %LE %WORD 0x0100
+    
+        ;EPLL_CON0_REG = 0x0000;
+        D.S SD:0x7002E1C0 %LE %WORD 0x0000
+    )
+    
+    IF &APM_INIT==1
+    (
+        ;AMPLL_CON1_REG = 0x0100;
+        D.S SD:0x7002E164 %LE %WORD 0x0100
+    
+        ;AMPLL_CON0_REG = 0x0000;
+        D.S SD:0x7002E160 %LE %WORD 0x0000
+    )
+    
+    IF &ALL_PLLS==1
+    (
+        ;CPLL_CON0_REG = 0x0000;
+        D.S SD:0x7002E200 %LE %WORD 0x0000
+    
+        ;THREED_CON0_REG = 0x0000;
+        D.S SD:0x7002E2C0 %LE %WORD 0x0000
+    
+        ;TV_CON0_REG = 0x0000;
+        D.S SD:0x7002E300 %LE %WORD 0x0000
+    
+        ;FG_CON0_REG = 0x0000;
+        D.S SD:0x7002E340 %LE %WORD 0x0000
+    
+        ;AUX_CON0_REG = 0x0000;
+        D.S SD:0x7002E380 %LE %WORD 0x0000
+    )
+    
+    ;;;;;;;;;;;;;;;;;
+    ; Initialize PLL
+    ;;;;;;;;;;;;;;;;;
+    
+    ;///////////////////////////////////////
+    ;// Start PLL Initialization Sequence
+    ;///////////////////////////////////////
+    
+    ;// MD MCU PLL
+    ;// Set lock timer to 9uS
+    ;// Enable synchronous shutdown/transition
+    ;// Enable reference clock outside of lock
+    ;// PLL freq = 520MHz
+    ;MPLL_CON0_REG |= 0x006C;
+    ;D.S SD:0x7002E140 %LE %WORD 0x006C
+    per.set.field SD:0x7002E140 %WORD 0x00FF 0x6C
+    
+    ;// Enable MPLL
+    ;MPLL_CON0_REG |= 0x0001;
+    ;D.S SD:0x7002E140 %LE %WORD 0x006D
+    per.set.field SD:0x7002E140 %WORD 0x0001 1
+    
+    ;// FCORE PLL
+    ;// Set lock timer to 9uS
+    ;// Enable synchronous shutdown/transition
+    ;// Enable reference clock outside of lock
+    ;// PLL freq = 312MHz
+    ;DPLL_CON0_REG |= 0x006C;
+    ;D.S SD:0x7002E180 %LE %WORD 0x006C
+    per.set.field SD:0x7002E180 %WORD 0x00FF 0x6C
+    
+    ;// Enable DPLL
+    ;DPLL_CON0_REG |= 0x0001;
+    ;D.S SD:0x7002E180 %LE %WORD 0x006D
+    per.set.field SD:0x7002E180 %WORD 0x0001 1
+    
+    ;// 3G PLL
+    ;// Set lock timer to 24uS
+    ;// Enable synchronous shutdown/transition
+    ;// Enable reference clock outside of lock
+    ;// 491.52MHz clock disabled
+    ;// MSDC_CLK_EN = disabled
+    ;WPLL_CON0_REG |= 0x006C;
+    ;D.S SD:0x7002E240 %LE %WORD 0x036C
+    per.set.field SD:0x7002E240 %WORD 0x00FF 0x6C
+    
+    ;// Enable WPLL
+    ;WPLL_CON0_REG |= 0x0001;
+    ;D.S SD:0x7002E240 %LE %WORD 0x036D
+    per.set.field SD:0x7002E240 %WORD 0x0001 1
+    
+    ;// 2G PLL
+    ;// Set lock timer to 10.5uS
+    ;// Enable synchronous shutdown/transition
+    ;// Enable reference clock outside of lock
+    ;GPLL_CON0_REG |= 0x006C;
+    ;D.S SD:0x7002E280 %LE %WORD 0x036C
+    per.set.field SD:0x7002E280 %WORD 0x00FF 0x6C
+    
+    ;// Enable GPLL
+    ;// Enable 48MHz USB clock
+    ;GPLL_CON0_REG |= 0x0081;
+    ;D.S SD:0x7002E280 %LE %WORD 0x03ED
+    per.set.field SD:0x7002E280 %WORD 0x0080 1
+    per.set.field SD:0x7002E280 %WORD 0x0001 1
+    
+    IF &EMI_INIT==1
+    (
+        ;// EMI PLL
+        ;// Set lock timer to 9uS
+        ;// Enable synchronous shutdown/transition
+        ;// Enable reference clock outside of lock
+    
+        ;//EPLL_CON0_REG = 0x006C
+        per.set.field SD:0x7002E1C0 %WORD 0x00FF 0x6C
+        ;;;;;per.set.field SD:0x900001C0 %WORD 0x00FF 0x6C
+        
+        IF &EMI_FREQUENCY==200
+        (        
+            ;//EPLL_CON0_REG |= (EMI_201_5_MHz);               // EMI defaults to 403.0MHz/2 = 201.5MHz
+            ;per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x70
+            ;;;;;per.set.field SD:0x900001C0 %WORD 0xFF00 0x70
+        
+            ;//EPLL_CON0_REG |= (0x006C | EMI_195_0_MHz);      // EMI defaults to 390.0MHz/2 = 195.0MHz   
+            per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x6F
+        )        
+
+        IF &EMI_FREQUENCY==166
+        (
+            ;//EPLL_CON0_REG |= (0x006C | EMI_165_75_MHZ);     // EMI defaults to 331.5MHz/2 = 165.75MHz
+            per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x00
+        )
+
+        IF &EMI_FREQUENCY==152
+        (
+            ;//EPLL_CON0_REG |= (0x006C | EMI_152_75_MHZ);     // EMI defaults to 305.5MHz/2 = 152.75MHz
+            per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x65
+        )
+
+        IF &EMI_FREQUENCY==100
+        (
+            ;//EPLL_CON0_REG |= (0x006C | EMI_101_85_MHZ);     // EMI defaults to 203.7MHz/2 = 101.85MHz
+            per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x53
+        )
+	        
+        IF &EMI_FREQUENCY==13
+        (
+            ;//EPLL_CON0_REG |= (0x006C | EMI_13_MHZ);         // EMI defaults to  26.0MHz/2 = 13.0MHz 
+            per.set.field SD:0x7002E1C0 %WORD 0xFF00 0x02
+        )
+
+        ;// Enable EPLL
+        ;//EPLL_CON0_REG |= 0x0001;
+        per.set.field SD:0x7002E1C0 %WORD 0x0001 1
+        ;;;;;per.set.field SD:0x900001C0 %WORD 0x0001 1
+    )
+    
+    IF &APM_INIT==1
+    (
+        ;// AP MCU PLL
+        ;// Set lock timer to 9uS
+        ;// Enable synchronous shutdown/transition
+        ;// Enable reference clock outside of lock
+        ;// PLL freq = 650MHz
+        ;AMPLL_CON0_REG |= 0x006C;
+        ;D.S SD:0x7002E160 %LE %WORD 0x006C 
+        per.set.field SD:0x7002E160 %WORD 0x00FF 0x6C 
+        ;per.set.field SD:0x7002E160 %WORD 0xFF00 0x7F ; APMCU @ 806MHz
+        ;per.set.field SD:0x7002E160 %WORD 0xFF00 0x7B ; APMCU @ 754MHz
+        ;per.set.field SD:0x7002E160 %WORD 0xFF00 0x69 ; APMCU @ 520MHz
+        ;per.set.field SD:0x7002E160 %WORD 0xFF00 0x58 ; APMCU @ 325MHz
+
+        ;// Enable AMPLL
+        ;AMPLL_CON0_REG |= 0x0001;
+        ;D.S SD:0x7002E160 %LE %WORD 0x006D
+        per.set.field SD:0x7002E160 %WORD 0x0001 1
+
+    )
+    
+    IF &ALL_PLLS==1
+    (
+        ;// CAMERA PLL
+        ;// Set lock timer to 12uS
+        ;// Enable synchronous shutdown/transition
+        ;// Enable reference clock outside of lock
+        ;// PLL freq = 143MHz
+        ;CPLL_CON0_REG |= 0x006C;
+        ;D.S SD:0x7002E200 %LE %WORD 0x006C
+        per.set.field SD:0x7002E200 %WORD 0x00FF 0x6C
+        ;// Enable CPLL
+        ;CPLL_CON0_REG |= 0x0001;
+        ;D.S SD:0x7002E200 %LE %WORD 0x006D
+        per.set.field SD:0x7002E200 %WORD 0x0001 1
+    
+        ;// 3D PLL
+        ;// Set lock timer to 12uS
+        ;// Enable synchronous shutdown/transition
+        ;// Enable reference clock outside of lock
+        ;// PLL freq = 195MHz
+        ;THREED_CON0_REG |= 0x006C;
+        ;D.S SD:0x7002E2C0 %LE %WORD 0x006C
+        per.set.field SD:0x7002E2C0 %WORD 0x00FF 0x6C
+        ;// Enable THREED PLL
+        ;THREED_CON0_REG |= 0x0001;
+        ;D.S SD:0x7002E2C0 %LE %WORD 0x006D
+        per.set.field SD:0x7002E2C0 %WORD 0x0001 1
+    
+        ;// TV PLL
+        ;// Set lock timer to 9uS
+        ;// Enable synchronous shutdown/transition
+        ;// Enable reference clock outside of lock
+        ;// PLL freq = 27MHz (fixed)
+        ;TV_CON0_REG |= 0x006C;
+        ;D.S SD:0x7002E300 %LE %WORD 0x006C
+        per.set.field SD:0x7002E300 %WORD 0x00FF 0x6C
+        ;// Enable TV PLL
+        ;TV_CON0_REG |= 0x0001;
+        ;D.S SD:0x7002E300 %LE %WORD 0x006D
+        per.set.field SD:0x7002E300 %WORD 0x0001 1
+    
+        ;// FG PLL
+        ;// Set lock timer to 4mS
+        ;// Enable synchronous shutdown/transition
+        ;// Enable reference clock outside of lock
+        ;// Select FG PLL o/p (not driven by AUX_PLL or SYS_CLK)
+        ;// PLL freq = 406.3KHz
+        ;FG_CON0_REG |= 0x0260;
+        ;D.S SD:0x7002E340 %LE %WORD 0x0260
+        per.set.field SD:0x7002E340 %WORD 0x0FFF 0x260
+        ;// Enable FG PLL
+        ;FG_CON0_REG |= 0x0001;
+        ;D.S SD:0x7002E340 %LE %WORD 0x0261
+        per.set.field SD:0x7002E340 %WORD 0x0001 1
+    
+        ;// AUX PLL
+        ;// Set lock timer to 14mS
+        ;// Enable synchronous shutdown/transition
+        ;// Enable reference clock outside of lock
+        ;// Main clock = 104MHz
+        ;// Others clocks generated are 104MHz (alt BUS), 48MHz (alt USB) and 26MHz (alt AUDIOCLK/PMUCLK/SYSCLK)
+        ;AUX_CON0_REG |= 0x036C;
+        ;D.S SD:0x7002E380 %LE %WORD 0x036C
+        per.set.field SD:0x7002E380 %WORD 0x0FFF 0x36C
+        ;AUX_CON0_REG |= 0x0001;
+        ;D.S SD:0x7002E380 %LE %WORD 0x036D
+        per.set.field SD:0x7002E380 %WORD 0x0001 1
+    )
+    
+    ;#if 0
+    ;   // wait > 20us for PLL lock
+    ;   for(i=0; i<0x1000; i++);
+    ;#endif 
+    ; wait > 20us for PLL lock
+    wait 1.ms
+    
+    ;/////////////////////////////////////
+    ;// Wait for all PLLs to indicate lock
+    ;/////////////////////////////////////
+    ;while (MPLL_CON3_REG != MPLL_LOCKED);
+    ;while (DPLL_CON3_REG != DPLL_LOCKED);
+    IF &EMI_INIT==1
+    (
+        ;while (EPLL_CON3_REG != EPLL_LOCKED);    // Double check that it is locked
+    )
+    
+    IF &APM_INIT==1
+    (
+        ;while (AMPLL_CON3_REG != AMPLL_LOCKED);
+    )
+    
+    ;while ((WPLL_CON0_REG & WPLL_LOCKED) != WPLL_LOCKED);
+    ;while ((GPLL_CON0_REG & GPLL_LOCKED) != GPLL_LOCKED);
+    
+    IF &ALL_PLLS==1
+    (
+        ;while ((CPLL_CON0_REG & CPLL_LOCKED) != CPLL_LOCKED);
+        ;while ((THREEDPLL_CON0_REG & THREEDPLL_LOCKED) != THREEDPLL_LOCKED);
+        ;while ((TVPLL_CON0_REG & TVPLL_LOCKED) != TVPLL_LOCKED);
+        ;while ((FGPLL_CON0_REG & FGPLL_LOCKED) != FGPLL_LOCKED);
+        ;while ((AUXPLL_CON0_REG & AUXPLL_LOCKED) != AUXPLL_LOCKED);
+    )
+    
+    ;///////////////////////////////////
+    ;// Switch PLL control to HW control
+    ;///////////////////////////////////
+    ;MPLL_CON1_REG &= 0xFEFF;     // MPLL enable source = system power-down/reset control (not MOD_MCU_PLL_EN bit in MPLL_CON0_REG)
+    ;D.S SD:0x7002E144 %LE %WORD 0x0000
+    per.set.field SD:0x7002E144 %WORD 0x0100 0
+    
+    ;DPLL_CON1_REG &= 0xFEFF;     // DPLL enable source = system power-down/reset control (not DSP_PLL_EN bit in DPLL_CON0_REG)
+    ;D.S SD:0x7002E184 %LE %WORD 0x0000
+    per.set.field SD:0x7002E184 %WORD 0x0100 0
+    
+    ;WPLL_CON0_REG &= 0xFCFF;     // Enable source of gating 98.304 MSDC clock (from 3G PLL) = system MSDC clock enable control (not MSDC_CLK_EN bit in DPLL_CON0_REG)
+                            ;     // Enable source of 3G PLL = system power-down/reset control (not THREEG_PLL_EN bit in WPLL_CON0_REG)
+    ;D.S SD:0x7002E240 %LE %WORD 0x006D
+    per.set.field SD:0x7002E240 %WORD 0x0300 0
+    
+    ;GPLL_CON0_REG &= 0xFCFF;     // Enable source of gating 48.304 USB clock (from 2G PLL) = system USB clock enable control (not USB_CLK_EN bit in GPLL_CON0_REG)
+                            ;     // Enable source of 2G PLL = system power-down/reset control (not TWOG_PLL_EN bit in GPLL_CON0_REG)
+    ;D.S SD:0x7002E280 %LE %WORD 0x00ED
+    per.set.field SD:0x7002E280 %WORD 0x0300 0
+    
+    IF &EMI_INIT==1
+    (
+        ;EPLL_CON1_REG &= 0xFEFF;     // EPLL enable source = system power-down/reset control (not EMI_PLL_EN bit in EPLL_CON0_REG)
+        ;D.S SD:0x7002E1C4 %LE %WORD 0x0000
+        per.set.field SD:0x7002E1C4 %WORD 0x0100 0
+    )
+    
+    IF &APM_INIT==1
+    (
+        ;AMPLL_CON1_REG &= 0xFEFF;    // AMPLL enable source = system power-down/reset control (not APPS_MCU_PLL_EN bit in AMPLL_CON0_REG)
+        ;D.S SD:0x7002E164 %LE %WORD 0x0000
+        per.set.field SD:0x7002E164 %WORD 0x0100 0
+    )
+    
+    ;/////////////////////////////////////////////////////////////////////
+    ;// No HW control for CAMERA PLL, THREED PLL, TV PLL, FG PLL & AUX PLL
+    ;/////////////////////////////////////////////////////////////////////
+    
+    ;/////////////////////////////////////////////////////
+    ;// Switch clock from 26MHz Radio Clock to PLL outputs
+    ;/////////////////////////////////////////////////////
+    IF &EMI_INIT==1
+    (
+        IF &ALL_PLLS==1
+        (
+            ;PLL_CON4_REG = 0x1111;    // Select PLL o/p as clock source for CAMERA, FCORE, EMI & MDMCU
+                                  ;    // Q. Can we switch in a divider at the o/p of the MPLL (like we can for EPLL, CPLL & AMPLL) ?
+            D.S SD:0x7002E110 %LE %WORD 0x1111
+        )
+        ELSE
+        (
+            ;PLL_CON4_REG = 0x1110;    // Select PLL o/p as clock source for FCORE, EMI & MDMCU
+                                  ;    // Q. Can we switch in a divider at the o/p of the MPLL (like we can for EPLL, CPLL & AMPLL) ?
+                                  ;    // Do not touch CAMERA
+            D.S SD:0x7002E110 %LE %WORD 0x1110
+        )
+    )
+    ELSE
+    (
+        IF &ALL_PLLS==1
+        (
+            ;PLL_CON4_REG = 0x1101;    // Select PLL o/p as clock source for CAMERA, FCORE & MDMCU
+                                  ;    // Q. Can we switch in a divider at the o/p of the MPLL (like we can for EPLL, CPLL & AMPLL) ?
+                                  ;    // Do not touch EMI
+            D.S SD:0x7002E110 %LE %WORD 0x1101
+        )
+        ELSE
+        (
+            ;PLL_CON4_REG = 0x1100;    // Select PLL o/p as clock source for FCORE & MDMCU
+                                  ;    // Q. Can we switch in a divider at the o/p of the MPLL (like we can for EPLL, CPLL & AMPLL) ?
+                                  ;    // Do not touch EMI or CAMERA
+            D.S SD:0x7002E110 %LE %WORD 0x1100
+        )
+    )
+    
+    IF &APM_INIT==1
+    (
+        ;PLL_CON5_REG = 0x1111;    // Select PLL o/p as clock source for APMCU, 3G, 2G & MSDC
+                              ;    // APMCU PLL is divided by APMPLL_DIGDIV1 (which defaults to /1)
+        D.S SD:0x7002E114 %LE %WORD 0x1111
+    )
+    ELSE
+    (
+        ;PLL_CON5_REG = 0x0111;    // Select PLL o/p as clock source for 3G, 2G & MSDC
+                              ;    // Do not touch APMCU
+        D.S SD:0x7002E114 %LE %WORD 0x0111
+    )
+    
+    IF &ALL_PLLS==1
+    (
+        ;PLL_CON6_REG = 0x0155;    // Select PLL o/p as clock source for THREED, FG, AUX, TV & USB
+        D.S SD:0x7002E118 %LE %WORD 0x0155
+    )
+    
+    IF &ALL_PLLS==1
+    (
+        IF &SYSCLK_FROM_AUXADC==1
+        (
+            ;PLL_CON2_REG |= RG_OVRD_SYS_CLK;   // Replace SYS_CLK (26MHz) with the 26MHz clock from the AUX_PLL
+            ;D.S SD:0x7002E108 %LE %WORD 0x2300
+            per.set.field SD:0x7002E108 %WORD 0x2000 1
+        )
+    )
+)
+

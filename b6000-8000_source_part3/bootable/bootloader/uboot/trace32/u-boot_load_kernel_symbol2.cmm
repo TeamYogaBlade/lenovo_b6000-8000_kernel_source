@@ -1,0 +1,24 @@
+
+&PhyRamStart=0x00000000
+&RamdiskStart=&PhyRamStart+0x00800000
+&RamdiskSize=0x00A00000	;10mb
+&LimitRam=0x04000000	;64mb
+
+&BootArgStart=&PhyRamStart+0x100
+&BootArgEnd=&BootArgStart+0x6ff
+&KernelStart=&PhyRamStart+0x8000
+&KernelStartVirt=&KernelStart+0xC0000000
+&KernelEndVirt=&KernelStartVirt+0x01ffffff
+
+d.load.elf \\mtksnafs01\mtk01843\public\Perforce\Linux\Internal\android-linux-2.6.27\vmlinux /gnu /nocode
+
+Y.SPATH.SRD \\mtksnafs01\mtk01843\public\Perforce\Linux\Internal\android-linux-2.6.27\init
+Y.SPATH.SRD \\mtksnafs01\mtk01843\public\Perforce\Linux\Internal\android-linux-2.6.27\kernel
+Y.SPATH.SRD \\mtksnafs01\mtk01843\public\Perforce\Linux\Internal\android-linux-2.6.27\arch\arm\mach-mt3351
+Y.SPATH.SRD \\mtksnafs01\mtk01843\public\Perforce\Linux\Internal\android-linux-2.6.27\arch\arm\kernel
+Y.SPATH.SRD \\mtksnafs01\mtk01843\public\Perforce\Linux\Internal\android-linux-2.6.27\arch\arm\mm
+Y.SPATH.SRD \\mtksnafs01\mtk01843\public\Perforce\Linux\Internal\android-linux-2.6.27\drivers
+Y.SPATH.SRD \\mtksnafs01\mtk01843\public\Perforce\Linux\Internal\android-linux-2.6.27\mm
+Y.SPATH.SRD \\mtksnafs01\mtk01843\public\Perforce\Linux\Internal\android-linux-2.6.27\arch\arm\boot\compressed
+Y.SPATH.SRD \\mtksnafs01\mtk01843\public\Perforce\Linux\Internal\android-linux-2.6.27\lib
+

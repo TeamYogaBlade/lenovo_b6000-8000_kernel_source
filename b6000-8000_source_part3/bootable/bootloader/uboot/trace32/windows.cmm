@@ -1,0 +1,40 @@
+// T32 Fri Jul 24 14:37:57 2009
+
+ B::
+ 
+ TOOLBAR ON
+ STATUSBAR ON
+ WINPAGE.RESET
+ 
+ WINCLEAR
+ WINPOS 0.0 0.0 33. 30. 0. 0. W004
+ Register /SPOTLIGHT 
+ 
+ WINPOS 110.25 31.063 46. 7. 0. 0. W006
+ PER
+ 
+ WINPOS 124.0 0.0 32. 27. 5. 0. W003
+ Var.Frame /Locals /Caller
+ 
+ WINPOS 0.0 30.938 33. 14. 0. 1. W001
+ WINTABS 26. 26.
+ sYmbol.Browse
+ 
+ WINPOS 33.875 0.0 89. 28. 13. 1. W003
+ WINTABS 16. 10. 25. 62.
+ d.l
+ 
+ WINPOS 35.875 31.0 71. 14. 13. 1. W009
+ Data.dump (0x8003E018) /DIALOG /SPOTLIGHT 
+ 
+ WINPOS 110.63 40.875 45. 4. 0. 0. W004
+ Var.Watch
+ 
+ VAR.ADDWATCH timestamp
+ VAR.ADDWATCH lastinc
+ VAR.ADDWATCH &timestamp
+ VAR.ADDWATCH &lastinc
+ 
+ WINPAGE.SELECT P000     
+ 
+ ENDDO

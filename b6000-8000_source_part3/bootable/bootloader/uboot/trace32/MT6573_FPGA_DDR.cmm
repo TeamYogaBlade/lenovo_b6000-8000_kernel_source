@@ -1,0 +1,1111 @@
+&FPGA2_SETTING=1
+
+;FPGA#2
+IF &FPGA2_SETTING==1
+(
+    ;Disable AP watchdog
+    D.S SD:0x70025000 %LE %WORD 0x2200
+    ;Disable DSP watchdog
+    D.S SD:0x70025020 %LE %WORD 0x2200
+    ;Disable MD watchdog
+    D.S SD:0x70025030 %LE %WORD 0x2200
+)
+
+;------- Enable ITCM, DTCM -------
+; 
+;PER.S C15:0x1 %LONG 0x00040000 ;   Enable I-TCM
+;PER.S C15:0x1 %LONG 0x00050000 ;   Enable D-TCM
+
+;--------Select Boot mode--------------------
+; only one of them can be set to 1
+&EXT_RAM=1
+&INT_RAM=0
+&EXT_ROM=0
+
+&PASR=0 ; Partial Array Self-Refresh.
+IF &INT_RAM==1
+(
+    &PASR=1
+)
+
+
+;------- Select SDR32, DDR32 on board -------
+; [MODIFY]   Why we set IO driving for external interface here?
+&OnBoardMemorySelect=0 ;0: Not On Board
+                       ;1: On Board
+
+IF &OnBoardMemorySelect==1 ; SDR32
+(
+;    D.S SD:0x84010700 %LE %LONG 0x1
+)
+IF &OnBoardMemorySelect==0 ; DDR32
+(
+;    D.S SD:0x84010700 %LE %LONG 0x0
+)
+
+;------- Disable Watch Dog Timer ------- 
+;   No WDT on 1st version of FPGA.
+;D.S SD:0x61050000 %LE %WORD 2200          
+
+
+;------- Power On Module ------- 
+;D.S SD:0x941f0004 %LE %LONG 0xFFFFFFFF
+;D.S SD:0x84000020 %LE %LONG 0xFFFFFFFF
+;D.S SD:0xA4110320 %LE %WORD 0xFFFF
+;D.S SD:0xA4110328 %LE %WORD 0xFFFF
+;D.S SD:0xA4110338 %LE %WORD 0xFFFF
+
+
+;------- Clock Ratio ------- 
+&Clock=1 ; 0: 1:1:1
+         ; 1: 1:2:4
+         ; 2: 1:2:8
+         ; 3: 1:4:4
+&Frequency=0 ; 0: 24MHz
+             ; 1: 18.432MHz
+
+IF &Clock!=0
+(
+;    D.S SD:0x840C0010 %LE %WORD 0x001E 
+;    D.S SD:0x840C0014 %LE %WORD 0x0083 
+;    D.S SD:0x840C0030 %LE %WORD 0x0080 
+;    D.S SD:0x840C0020 %LE %WORD 0x0080 
+;    D.S SD:0x840C0028 %LE %WORD 0x0080 
+;    D.S SD:0x840C0030 %LE %WORD 0x0000 
+;    D.S SD:0x840C0020 %LE %WORD 0x0000 
+;    D.S SD:0x840C0028 %LE %WORD 0x0000
+;    wait 100.ms 
+;    D.S SD:0x840C0014 %LE %WORD 0x00F3 
+)
+
+IF &Clock==1
+(
+;    D.S SD:0x84010118 %LE %WORD 0x7DE7 
+;    D.S SD:0x84010118 %LE %WORD 0x3CE7 
+)
+IF &Clock==2
+(
+;    D.S SD:0x84010118 %LE %WORD 0x7DE3 
+;    D.S SD:0x84010118 %LE %WORD 0x3DE3 
+)
+IF &Clock==3
+(
+;    D.S SD:0x84010118 %LE %WORD 0x7CE7 
+)
+
+
+;------- UART Setting ------- 
+&UART1=0 ; 0: off
+         ; 1: on
+
+           
+IF &UART1==1
+(
+    D.S SD:0x7000300C %LE %WORD 0x0003 
+    wait 100.ms 
+    D.S SD:0x7000300C %LE %WORD 0x0083 
+    wait 100.ms 
+
+    IF &Frequency==0
+    (
+        IF &Clock==0
+        (
+            ; 26MHz
+            ; UART Baud Rate: 115200       
+            D.S SD:0x70003000 %LE %WORD 0x000E 
+        )
+        IF &Clock==1
+        (
+            ; 61.44MHz
+            ; UART Baud Rate: 115200
+            D.S SD:0x70003000 %LE %WORD 0x0021 
+        )
+    )
+    wait 100.ms 
+    IF &Frequency==1
+    (
+        IF &Clock==0
+        (
+            ; UART Baud Rate: 115200       
+            D.S SD:0x70003000 %LE %WORD 0x000A 
+        )
+        IF &Clock==1
+        (
+            ; UART Baud Rate: 19200
+            D.S SD:0x70003000 %LE %WORD 0x000F
+        )
+    )
+    wait 100.ms 
+    
+    D.S SD:0x70003004 %LE %WORD 0x0000 
+    D.S SD:0x7000300C %LE %WORD 0x0003
+    D.S SD:0x70003008 %LE %WORD 0x0047
+    D.S SD:0x70003010 %LE %WORD 0x0003
+    D.S SD:0x70003004 %LE %WORD 0x000D
+
+)
+wait 100.ms    
+
+
+&Remapping=2
+
+;------- EMI Remapping -------
+IF (&EXT_ROM==1)||(&OnBoardMemorySelect==1)
+(
+    &Remapping=2 
+)
+ELSE
+(
+    &Remapping=2; 0: Internal Boot
+                ; 2: CS0, CS1 not remapped
+                ; 3: CS0, CS1 remapped
+)
+
+IF &Remapping==2
+(
+    ;D.S SD:0x60000070 %LE %LONG 0x0002 ; VST commented out 11/30/09
+)
+IF &Remapping==3
+(
+    ;D.S SD:0x60000070 %LE %LONG 0x0003 ; VST commented out (09/23/09)
+)
+wait 100.ms    
+
+;------- Enable EMI bank 2 ------- 
+&EN_EMI_BANK_2=0
+
+;------- EMI Setting ------- 
+; Bank0 is one of NOR, PSRAM, SDR16, SDR32, DDR16 or DDR32 devices.
+&Bank0=19
+        ; 0 : DEFAULT
+        ; 1 : NOR ASYN
+        ; 2 : NOR Page
+        ; 3 : NOR Burst
+        ; 4 : PSRAM ASYN
+        ; 5 : PSRAM Page
+        ; 6 : PSRAM BRAW
+        ; 7 : PSRAM BRBW
+        ; 8 : SDR16
+        ; 9 : SDR32
+        ; 10: DDR16
+        ; 11: DDR32
+        ; 12: NOR ADMUX ASYN
+        ; 13: NOR ADMUX Burst
+        ; 14: PSRAM ADMUX ASYN
+        ; 15: PSRAM ADMUX BRAW
+        ; 16: PSRAM ADMUX BRBW
+        ; 17: DDR2-32 S2
+        ; 18: DDR2-32 S4
+        ; 19: DDR32-2Gb (Dual-DDR daughterboard support)
+; Bank1 is one of NOR, PSRAM, SDR16, SDR32, DDR16 or DDR32 devices.
+&Bank1=0
+        ; 0 : DEFAULT
+        ; 1 : NOR ASYN
+        ; 2 : NOR Page
+        ; 3 : NOR Burst
+        ; 4 : PSRAM ASYN
+        ; 5 : PSRAM Page
+        ; 6 : PSRAM BRAW
+        ; 7 : PSRAM BRBW
+        ; 8 : SDR16
+        ; 9 : SDR32
+        ; 10: DDR16
+        ; 11: DDR32
+        ; 12: NOR ADMUX ASYN
+        ; 13: NOR ADMUX Burst
+        ; 14: PSRAM ADMUX ASYN
+        ; 15: PSRAM ADMUX BRAW
+        ; 16: PSRAM ADMUX BRBW
+; Bank2 is one of PSRAM, SDR16, SDR32, DDR16 or DDR32 devices.
+&Bank2=0
+        ; 0 : DEFAULT
+        ; 4 : PSRAM ASYN
+        ; 5 : PSRAM Page
+        ; 6 : PSRAM BRAW
+        ; 7 : PSRAM BRBW
+        ; 8 : SDR16
+        ; 9 : SDR32
+        ; 10: DDR16
+        ; 11: DDR32
+        ; 14: PSRAM ADMUX ASYN
+        ; 15: PSRAM ADMUX BRAW
+        ; 16: PSRAM ADMUX BRBW
+; Bank3 is one of PSRAM, SDR16, SDR32, DDR16 or DDR32 devices.
+&Bank3=0
+        ; 0 : DEFAULT
+        ; 4 : PSRAM ASYN
+        ; 5 : PSRAM Page
+        ; 6 : PSRAM BRAW
+        ; 7 : PSRAM BRBW
+        ; 8 : SDR16
+        ; 9 : SDR32
+        ; 10: DDR16
+        ; 11: DDR32
+        ; 14: PSRAM ADMUX ASYN
+        ; 15: PSRAM ADMUX BRAW
+        ; 16: PSRAM ADMUX BRBW
+
+
+IF &OnBoardMemorySelect==1
+(
+   &Bank0=9
+   &Bank1=0
+   &Bank2=0 
+)
+
+
+;=============Bank 0======================================
+IF &Bank0==1   ;ASYN NOR
+(
+    D.S SD:0x85000000 %LE %LONG 0x18210820
+)
+IF &Bank0==2   ;NOR Page
+(
+    IF &Remapping==2
+    (
+        D.S SD:0x00011206 %LE %WORD 0x60
+        D.S SD:0x00011206 %LE %WORD 0x03
+        D.S SD:0x00000000 %LE %WORD 0xFF
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x10011206 %LE %WORD 0x60
+        D.S SD:0x10011206 %LE %WORD 0x03
+        D.S SD:0x10000000 %LE %WORD 0xFF
+    )
+    ;D.S SD:0x85000000 %LE %LONG 0x8C258120
+    D.S SD:0x85000000 %LE %LONG 0x8C299228
+)
+IF &Bank0==3
+(
+    IF &Remapping==2
+    (
+        D.S SD:0x00004A06 %LE %WORD 0x60
+        D.S SD:0x00004A06 %LE %WORD 0x03
+        D.S SD:0x00000000 %LE %WORD 0xFF
+        D.S SD:0x85000070 %LE %LONG 0x00000502
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x10004A06 %LE %WORD 0x60
+        D.S SD:0x10004A06 %LE %WORD 0x03
+        D.S SD:0x10000000 %LE %WORD 0xFF
+        D.S SD:0x85000070 %LE %LONG 0x00000503
+    )
+    D.S SD:0x85000000 %LE %LONG 0x88210020
+    D.S SD:0x85000020 %LE %LONG 0xA240C000
+)
+IF &Bank0==4
+(
+)
+IF &Bank0==5
+(
+)
+IF &Bank0==6
+(
+)
+IF &Bank0==7
+(
+)
+IF &Bank0==8
+(
+)
+IF &Bank0==9  ;SDR32
+(
+  IF &PASR==0
+  (
+    D.S SD:0x85000040 %LE %LONG 0x00324000
+  )
+  IF &PASR==1
+  (
+    D.S SD:0x85000040 %LE %LONG 0x00324001
+  )
+    D.S SD:0x85000048 %LE %LONG 0x12581180
+    ;D.S SD:0x85000048 %LE %LONG 0x227862000
+    D.S SD:0x85000050 %LE %LONG 0x00540000
+    D.S SD:0x85000058 %LE %LONG 0x00043002
+    IF &Remapping==2
+    (
+        D.S SD:0x85000070 %LE %LONG 0x0702
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x85000070 %LE %LONG 0x0703
+    )
+    D.S SD:0x85000088 %LE %LONG 0x0001000E
+    D.S SD:0x85000068 %LE %LONG 0x00410001
+    wait 100.ms
+    D.S SD:0x85000068 %LE %LONG 0x10410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x02410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x01410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x08410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x04410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x08410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x04410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x00411003
+    wait 1.ms
+    D.S SD:0x850001C0 %LE %LONG 0x10101010
+    wait 1.ms   
+
+)
+IF &Bank0==10  ;DDR16
+(
+  IF &PASR==0
+  (
+    D.S SD:0x85000040 %LE %LONG 0x00324000
+  )
+  IF &PASR==1
+  (
+    D.S SD:0x85000040 %LE %LONG 0x00324001
+  )
+    D.S SD:0x85000078 %LE %LONG 0x00666660
+    D.S SD:0x85000080 %LE %LONG 0x00666606
+
+    D.S SD:0x85000048 %LE %LONG 0x1AC01000
+    ;D.S SD:0x85000050 %LE %LONG 0x03CE0000
+    D.S SD:0x85000050 %LE %LONG 0x001D0000
+    D.S SD:0x85000058 %LE %LONG 0x00032004
+    IF &Remapping==2
+    (
+        D.S SD:0x85000070 %LE %LONG 0x0702
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x85000070 %LE %LONG 0x030A
+    )
+    D.S SD:0x85000088 %LE %LONG 0x0001000E
+    D.S SD:0x85000068 %LE %LONG 0x00521101
+    wait 100.ms
+    D.S SD:0x85000068 %LE %LONG 0x10521101
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x02521101
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x01521101
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x08521101
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x04521101
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x08521101
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x04521101
+    wait 1.ms
+    ;D.S SD:0x85000068 %LE %LONG 0x00521103
+  IF &PASR==0
+  (
+    D.S SD:0x85000068 %LE %LONG 0x00521117
+  )
+ IF &PASR==1
+  (
+    D.S SD:0x85000068 %LE %LONG 0x00D21117
+  )
+    wait 1.ms
+    D.S SD:0x850001B0 %LE %LONG 0x20202020
+    wait 1.ms  
+)
+
+;FPGA#2 
+IF &FPGA2_SETTING==1
+(
+    D.S SD:0x70026190 %LE %LONG 0x00001101
+    D.S SD:0x70026194 %LE %LONG 0x00001111
+    D.S SD:0x70026198 %LE %LONG 0x00000111
+    D.S SD:0x60140104 %LE %LONG 0x00000110
+    D.S SD:0x60140308 %LE %LONG 0xffffffff
+    D.S SD:0x60140318 %LE %LONG 0xffffffff
+    D.S SD:0x70026308 %LE %LONG 0xffffffff
+    D.S SD:0x70026318 %LE %LONG 0xffffffff
+    D.S SD:0x70026320 %LE %LONG 0x00000000
+    ;wait 5.s
+)
+
+IF &Bank0==11 ;DDR32
+(
+    IF &PASR==0
+    (
+        ;   Full-array self-refresh.
+        D.S SD:0x70000040 %LE %LONG 0x00324000 ;VST modified for MT6573
+    )
+    
+    IF &PASR==1
+    (
+        ;   Halfl-array self-refresh.
+        D.S SD:0x70000040 %LE %LONG 0x00324001 ;VST modified for MT6573
+    )
+
+    ;   We do not have to set Driving on FPGA.
+    ;D.S SD:0x60000078 %LE %LONG 0x00666660
+    ;D.S SD:0x60000080 %LE %LONG 0x00666606
+
+
+    ;   Set AC Timing Parameters
+    D.S SD:0x70000048 %LE %LONG 0x00061001 ;VST modified for MT6573
+    ;D.S SD:0x70000050 %LE %LONG 0x00501000 ;VST modified for MT6573
+    D.S SD:0x70000050 %LE %LONG 0x00111000 ;VST modified for MT6573 (assumes EMI clock rate = 5MHz on FPGA1)
+    D.S SD:0x70000058 %LE %LONG 0x00011003 ;VST modified for MT6573
+    
+    IF &Remapping==2
+    (
+        D.S SD:0x70000070 %LE %LONG 0x0000030A ; VST - Do not swap CS0/CS1 internally on FPGA1 (since CS0/CS2 are physcially swapped on FPGA balls)
+    )
+    
+    IF &Remapping==3
+    (
+        D.S SD:0x70000070 %LE %LONG 0x0000030B ;VST modified for MT6573
+    )
+
+    ;   Only enable CS0 for DRAM usage.
+    D.S SD:0x70000088 %LE %LONG 0x00010000 ;VST modified for MT6573
+    
+    ;   For WS868, CS0, 128MB DDR32.
+    ;   Note we enable ADDR SWAP here so that we could test PASR at run-time.
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x005B1109 ;VST modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x005B1101 ;VST modified for MT6573
+    )
+
+    ;   Set MD's S.R. Mode as enabled so we could fully controll EMI's S.R. mode using AP side.
+    ;   Note this register is not present on FPGA0 & FPGA1
+    D.S SD:0x70000098 %LE %LONG 0x00000001 ;VST modified for MT6573
+
+    wait 100.ms
+    
+    ;   I sync this flow with datasheet.
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x105B1109 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x085B1109 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x045B1109 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x025B1109 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x015B1109 ;VST modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x105B1101 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x085B1101 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x045B1101 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x025B1101 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x015B1101 ;VST modified for MT6573
+    )
+    wait 1.ms
+    
+    ;   Temporarily disable REF_FIX_CK since this version FPGA doesn't connect it so EMI can not issue A.R. command.
+    ;      We can also observe this because 
+    ;D.S SD:0x60000068 %LE %LONG 0x00531117
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x005B111B ;VST modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x005B1113 ;VST modified for MT6573
+    )
+    wait 1.ms
+
+    ;   Set manual DQSI delay value w/o auto tracking.
+    ;D.S SD:0x70000310 %LE %LONG 0x10101010 ;VST modified for MT6573
+    D.S SD:0x70000300 %LE %LONG 0x10101010 ;VST modified for MT6573
+    wait 1.ms 
+    ;D.S SD:0x70000150 %LE %LONG 0x80000000 ;VST modified for MT6573
+)
+
+IF &Bank0==12 ;NOR ADMUX ASYN
+(
+    D.S SD:0x60000000 %LE %LONG 0x38A00619
+)
+IF &Bank0==13
+(
+    D.S SD:0x60000000 %LE %LONG 0x38A00619
+
+    IF &Remapping==2
+    (
+        D.S SD:0x00000AAA %LE %WORD 0x00AA
+        D.S SD:0x00000555 %LE %WORD 0x0055
+        D.S SD:0x00000AAA %LE %WORD 0x00D0
+        D.S SD:0x00000000 %LE %WORD 0x16CB
+        ;D.S SD:0x00000000 %LE %WORD 0x26CB
+        D.S SD:0x00000000 %LE %WORD 0x00F0
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x10000AAA %LE %WORD 0x00AA
+        D.S SD:0x10000555 %LE %WORD 0x0055
+        D.S SD:0x10000AAA %LE %WORD 0x00D0
+        D.S SD:0x10000000 %LE %WORD 0x16CB
+        D.S SD:0x10000000 %LE %WORD 0x00F0
+    )
+
+    wait 100.ms
+    D.S SD:0x60000000 %LE %LONG 0xA8A00019
+    D.S SD:0x60000020 %LE %LONG 0xA2404000
+    ;D.S SD:0x60000000 %LE %LONG 0x28A00019
+    ;D.S SD:0x60000020 %LE %LONG 0x22C04000
+    IF &Remapping==2
+    (
+        D.S SD:0x60000070 %LE %LONG 0x00000502
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x60000070 %LE %LONG 0x00000503
+    )
+)
+IF &Bank0==14 
+(   
+)
+IF &Bank0==15
+(
+)
+IF &Bank0==16
+(
+)
+
+IF &Bank0==18 ; DDR2-32 S4
+(
+    ; Setup DRAM AC timing
+    ; EMI_CONJ
+    ;D.S SD:0x70000048 %LE %LONG 0x00001040	; FPGA
+    D.S SD:0x70000048 %LE %LONG 0x03041250	; RealChip
+    ;D.S SD:0x70000048 %LE %LONG 0x00041240
+
+    ; EMI_CONK
+    ;D.S SD:0x70000050 %LE %LONG 0x00010000	; FPGA
+    D.S SD:0x70000050 %LE %LONG 0x00171100	; RealChip
+    ;D.S SD:0x70000050 %LE %LONG 0x00081100
+
+    ; EMI_CONL
+    ;D.S SD:0x70000058 %LE %LONG 0x00400003	; FPGA
+    D.S SD:0x70000058 %LE %LONG 0x10423003	; RealChip
+
+    ; EMI_DDRV
+    D.S SD:0x70000080 %LE %LONG 0x00000010      ; VST modified to support CS0
+
+    ; EMI_GEND - EMI rank select registers
+    D.S SD:0x70000088 %LE %LONG 0x00010000      ; VST modified to support CS0
+
+    ; EMI_CONN - Enable DRAM controller
+    D.S SD:0x70000068 %LE %LONG 0x00650001      ; Rows address = 13, Bank address = 3, Column address = 9 => 1Gb DDR2-32
+    wait 1.ms
+    
+    ; EMI_GENA - Enable DRAM Clock
+    D.S SD:0x70000070 %LE %LONG 0x00000300    
+    wait 1.ms
+    
+    ; EMI_GENA - Enable DDR2 CKE
+    IF &Remapping==2
+    (
+        D.S SD:0x70000070 %LE %LONG 0x0000031A  ; VST - External boot should be enabled at this time to allow loading of binaries to external memory
+    )
+    
+    IF &Remapping==3
+    (
+        D.S SD:0x70000070 %LE %LONG 0x0000031B
+    )
+    wait 1.ms
+    
+    ; EMI_CONN - Reset DDR2
+    D.S SD:0x70000040 %LE %LONG 0x003F0000
+    D.S SD:0x70000068 %LE %LONG 0x20650001
+    wait 100.ms
+    D.S SD:0x70000068 %LE %LONG 0x00650001
+    wait 1.ms
+    
+    ; Read the DDR2 DAI
+    D.S SD:0x70000040 %LE %LONG 0x00000000
+    D.S SD:0x70000068 %LE %LONG 0x40650001
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00650001
+    wait 1.ms
+    
+    ; DDR2 ZQ Calibration 
+    ;D.S SD:0x70000080 %LE %LONG 0x0000A403
+    D.S SD:0x70000040 %LE %LONG 0xFF0A0000
+    D.S SD:0x70000068 %LE %LONG 0x20650001
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00650001
+    wait 1.ms
+
+    ; Set Device Feature1 - nWR=3, WC=Wrap, BT=sequential, BL=4
+    D.S SD:0x70000040 %LE %LONG 0x22010000
+    D.S SD:0x70000068 %LE %LONG 0x20650001
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00650001
+    wait 1.ms
+    
+    ; Set Device Feature2 - RL3/WL1
+    D.S SD:0x70000040 %LE %LONG 0x01020000
+    D.S SD:0x70000068 %LE %LONG 0x20650001
+    wait 1.ms
+    D.S SD:0x70000068 %LE %LONG 0x00650001
+    wait 1.ms
+
+    ; SHK: Temporarily disable REF_FIX_CK since this version FPGA doesn't connect it so EMI can not issue A.R. command.
+    ;      We can also observe this because 
+    D.S SD:0x70000068 %LE %LONG 0x00650A03	; VST enabled 
+    ;D.S SD:0x70000068 %LE %LONG 0x00650917
+    wait 1.ms
+
+    ; SHK: Set manual DQSI delay value w/o auto tracking.
+    D.S SD:0x70000300 %LE %LONG 0x38383838
+    wait 1.ms
+)
+
+IF &Bank0==19 ; DDR32-2Gb (Dual-DDR daughterboard support)
+(
+    IF &PASR==0
+    (
+        ;   Full-array self-refresh.
+        D.S SD:0x70000040 %LE %LONG 0x00324000 ;VST modified for MT6573
+    )
+    
+    IF &PASR==1
+    (
+        ;   Halfl-array self-refresh.
+        D.S SD:0x70000040 %LE %LONG 0x00324001 ;VST modified for MT6573
+    )
+
+    ;   We do not have to set Driving on FPGA.
+    ;D.S SD:0x60000078 %LE %LONG 0x00666660
+    ;D.S SD:0x60000080 %LE %LONG 0x00666606
+
+
+    ;   Set AC Timing Parameters
+    D.S SD:0x70000048 %LE %LONG 0x00061001 ;VST modified for MT6573
+    ;D.S SD:0x70000050 %LE %LONG 0x00501000 ;VST modified for MT6573
+    ;D.S SD:0x70000050 %LE %LONG 0x00111000 ;VST modified for MT6573 (assumes EMI clock rate = 5MHz on FPGA1)
+    D.S SD:0x70000050 %LE %LONG 0x00021000 ;VST modified for MT6573 (assumes fixed clock rate for refresh = 5MHz / 16 = 0.3125MHz)
+    D.S SD:0x70000058 %LE %LONG 0x00011003 ;VST modified for MT6573
+    
+    IF &Remapping==2
+    (
+        D.S SD:0x70000070 %LE %LONG 0x0000030A ;VST modified for MT6573
+    )
+    
+    IF &Remapping==3
+    (
+        D.S SD:0x70000070 %LE %LONG 0x0000030B ;VST modified for MT6573
+    )
+
+    ;   Only enable CS0 & CS1 for DRAM usage.
+    D.S SD:0x70000088 %LE %LONG 0x00030000 ;VST modified for MT6573
+    
+    ;   For WS868, CS0, 128MB DDR32.
+    ;   Note we enable ADDR SWAP here so that we could test PASR at run-time.
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x008B1109 ;VST modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x008B1101 ;KC/PFT modified for MT6573
+    )
+    ;   Set MD's S.R. Mode as enabled so we could fully controll EMI's S.R. mode using AP side.
+    ;   Note this register is not present on FPGA0 & FPGA1
+    D.S SD:0x70000098 %LE %LONG 0x00000001 ;VST modified for MT6573
+
+    wait 100.ms
+    
+    ;   I sync this flow with datasheet.
+    ;FPGA#2
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x108B1109 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x088B1109 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x048B1109 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x028B1109 ;VST modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x018B1109 ;VST modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        D.S SD:0x70000068 %LE %LONG 0x108B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x088B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x048B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x028B1101 ;KC/PFT modified for MT6573
+        D.S SD:0x70000068 %LE %LONG 0x018B1101 ;KC/PFT modified for MT6573
+    )
+    wait 1.ms
+    
+    ;   Temporarily disable REF_FIX_CK since this version FPGA doesn't connect it so EMI can not issue A.R. command.
+    ;      We can also observe this because 
+    ;D.S SD:0x60000068 %LE %LONG 0x00531117
+    IF &FPGA2_SETTING==0
+    (
+        D.S SD:0x70000068 %LE %LONG 0x008B111B ;VST modified for MT6573
+    )
+    IF &FPGA2_SETTING==1
+    (
+        ;D.S SD:0x70000068 %LE %LONG 0x008B1117 ;KC/PFT modified for MT6573 - VST updated to enable REF_FIX_CK (for DCM)
+        D.S SD:0x70000068 %LE %LONG 0x008B3117 ;KC/PFT modified for MT6573 - VST updated to enable REF_FIX_CK (for DCM) & Concurrent AP
+    )
+    wait 1.ms
+
+    ;   Set manual DQSI delay value w/o auto tracking.    
+    D.S SD:0x70000300 %LE %LONG 0x10101010 ;VST modified for MT6573
+    D.S SD:0x70000308 %LE %LONG 0x10101010 ;VST modified for MT6573    
+    
+    wait 1.ms 
+)
+
+wait 100.ms    
+
+
+;=============Bank 1======================================
+
+IF &Bank1==1  
+(    
+)
+IF &Bank1==2
+(
+)
+IF &Bank1==3
+(
+)
+IF &Bank1==4 ;ARAW PSRAM
+(
+    D.S SD:0x85000008 %LE %LONG 0x18210528
+)
+IF &Bank1==5 ;PSRAM Page
+(
+    IF &Remapping==2
+    (
+        D.I 0x17FFFFFE /WORD
+        D.I 0x17FFFFFE /WORD
+        D.S SD:0x17FFFFFE %LE %WORD 0x0000
+        D.S SD:0x17FFFFFE %LE %WORD 0x0090
+        
+        D.I 0x17FFFFFE /WORD
+        D.I 0x17FFFFFE /WORD
+        D.S SD:0x17FFFFFE %LE %WORD 0x0001
+        D.S SD:0x17FFFFFE %LE %WORD 0x9903
+        
+    )
+    IF &Remapping==3
+    (
+        D.I 0x07FFFFFE /WORD
+        D.I 0x07FFFFFE /WORD
+        D.S SD:0x07FFFFFE %LE %WORD 0x0000
+        D.S SD:0x07FFFFFE %LE %WORD 0x0090
+        
+        D.I 0x07FFFFFE /WORD
+        D.I 0x07FFFFFE /WORD
+        D.S SD:0x07FFFFFE %LE %WORD 0x0001
+        D.S SD:0x07FFFFFE %LE %WORD 0x9903
+        
+    )
+    ;D.S SD:0x85000008 %LE %LONG 0x8C295228
+    D.S SD:0x85000008 %LE %LONG 0x8C296330
+
+    D.S SD:0x85000080 %LE %LONG 0x111111
+)
+IF &Bank1==6 ;PSRAM BRAW
+(
+    IF &Remapping==2
+    (
+        D.I 0x17FFFFFE /WORD
+        D.I 0x17FFFFFE /WORD
+        D.S SD:0x17FFFFFE %LE %WORD 0x0001
+        D.S SD:0x17FFFFFE %LE %WORD 0x1503  ;variable latency
+;       D.S SD:0x17FFFFFE %LE %WORD 0x5503  ;fixed latency
+        
+    )
+    IF &Remapping==3
+    (
+        D.I 0x07FFFFFE /WORD
+        D.I 0x07FFFFFE /WORD
+        D.S SD:0x07FFFFFE %LE %WORD 0x0001
+        D.S SD:0x07FFFFFE %LE %WORD 0x1503  ;variable latency
+;       D.S SD:0x07FFFFFE %LE %WORD 0x5503  ;fixed latency
+        
+    )
+    D.S SD:0x85000008 %LE %LONG 0x88210028
+    D.S SD:0x85000028 %LE %LONG 0xA200C000  ;variable latency 
+;   D.S SD:0x85000028 %LE %LONG 0x22004000  ;fixed latency
+    IF &Remapping==2
+    (
+        D.S SD:0x85000070 %LE %LONG 0x00000502
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x85000070 %LE %LONG 0x00000503
+    )
+
+)
+IF &Bank1==7 ;PSRAM BRBW
+(
+    IF &Remapping==2
+    (
+        D.I 0x17FFFFFE /WORD
+        D.I 0x17FFFFFE /WORD
+        D.S SD:0x17FFFFFE %LE %WORD 0x0001
+;        D.S SD:0x17FFFFFE %LE %WORD 0x1503 ;variable latency
+       D.S SD:0x17FFFFFE %LE %WORD 0x5503 ;fixed latency
+        
+    )
+    IF &Remapping==3
+    (
+        D.I 0x07FFFFFE /WORD
+        D.I 0x07FFFFFE /WORD
+        D.S SD:0x07FFFFFE %LE %WORD 0x0001
+;        D.S SD:0x07FFFFFE %LE %WORD 0x1503 ;variable latency
+       D.S SD:0x07FFFFFE %LE %WORD 0x5503 ;fixed latency
+        
+    )
+    D.S SD:0x85000008 %LE %LONG 0x80000000
+;    D.S SD:0x85000028 %LE %LONG 0xB200C008 ;variable latency 
+    D.S SD:0x85000028 %LE %LONG 0x32004008;fixed latency
+
+
+    IF &Remapping==2
+    (
+        D.S SD:0x85000070 %LE %LONG 0x00000502
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x85000070 %LE %LONG 0x00000503
+    )
+
+)
+IF &Bank1==8
+(
+)
+IF &Bank1==9
+(
+  IF &PASR==0
+  (
+    D.S SD:0x85000040 %LE %LONG 0x00324000
+  )
+  IF &PASR==1
+  (
+    D.S SD:0x85000040 %LE %LONG 0x00324001
+  )
+    ;D.S SD:0x85000048 %LE %LONG 0x12581180
+    D.S SD:0x85000048 %LE %LONG 0x227862000
+    D.S SD:0x85000050 %LE %LONG 0x00540000
+    D.S SD:0x85000058 %LE %LONG 0x00043002
+    IF &Remapping==2
+    (
+        D.S SD:0x85000070 %LE %LONG 0x0702
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x85000070 %LE %LONG 0x0703
+    )
+    D.S SD:0x85000088 %LE %LONG 0x0002000D
+    D.S SD:0x85000068 %LE %LONG 0x00410001
+    wait 100.ms
+    D.S SD:0x85000068 %LE %LONG 0x10410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x02410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x01410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x08410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x04410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x08410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x04410001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x00411003
+    wait 1.ms
+    D.S SD:0x850001C0 %LE %LONG 0x10101010
+    wait 1.ms  
+
+)
+IF &Bank1==10
+(
+)
+IF &Bank1==11
+(
+)
+IF &Bank1==12
+(
+)
+IF &Bank1==13
+(
+)
+IF &Bank1==14 ;PSRAM ADMUX ASYN
+(
+     D.S SD:0x85000008 %LE %LONG 0x38A00529
+)
+IF &Bank1==15 ;PSRAM ADMUX BRAW
+(
+    D.S SD:0x85000008 %LE %LONG 0x38A00529
+    IF &Remapping==2
+    (
+        D.I 0x17FFFFFE /WORD
+        D.I 0x17FFFFFE /WORD
+        D.S SD:0x17FFFFFE %LE %WORD 0x0001
+        D.S SD:0x17FFFFFE %LE %WORD 0x1503 ;variable latency
+;       D.S SD:0x17FFFFFE %LE %WORD 0x5503 ;fixed latency
+        
+    )
+    IF &Remapping==3
+    (
+        D.I 0x07FFFFFE /WORD
+        D.I 0x07FFFFFE /WORD
+        D.S SD:0x07FFFFFE %LE %WORD 0x0001
+        D.S SD:0x07FFFFFE %LE %WORD 0x1503  ;variable latency
+;       D.S SD:0x07FFFFFE %LE %WORD 0x5503  ;fixed latency
+        
+    )
+    D.S SD:0x85000008 %LE %LONG 0xA8A00029
+    D.S SD:0x85000028 %LE %LONG 0xA200C000  ;variable latency 
+;   D.S SD:0x85000028 %LE %LONG 0x22004000  ;fixed latency
+    IF &Remapping==2
+    (
+        D.S SD:0x85000070 %LE %LONG 0x00000502
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x85000070 %LE %LONG 0x00000503
+    )    
+)
+IF &Bank1==16 ;PSRAM ADMUX BRBW
+(
+    D.S SD:0x85000008 %LE %LONG 0x38A00111
+    IF &Remapping==2
+    (
+        D.I 0x17FFFFFE /WORD
+        D.I 0x17FFFFFE /WORD
+        D.S SD:0x17FFFFFE %LE %WORD 0x0001
+;        D.S SD:0x17FFFFFE %LE %WORD 0x1503 ;variable latency 
+       D.S SD:0x17FFFFFE %LE %WORD 0x5503 ;fixed latency        
+    )
+    IF &Remapping==3
+    (
+        D.I 0x07FFFFFE /WORD
+        D.I 0x07FFFFFE /WORD
+        D.S SD:0x07FFFFFE %LE %WORD 0x0001
+;        D.S SD:0x07FFFFFE %LE %WORD 0x1503  ;variable latency 
+       D.S SD:0x07FFFFFE %LE %WORD 0x5503  ;fixed latency        
+    )
+    D.S SD:0x85000008 %LE %LONG 0xA0000000
+;    D.S SD:0x85000028 %LE %LONG 0xB200C008 ;variable latency 
+    D.S SD:0x85000028 %LE %LONG 0x32004008 ;fixed latency
+    IF &Remapping==2
+    (
+        D.S SD:0x85000070 %LE %LONG 0x00000502
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x85000070 %LE %LONG 0x00000503
+    )
+)
+
+;=============Bank 2======================================
+
+IF &Bank2==8  ;SDR16
+(
+  IF &PASR==0
+  (
+    D.S SD:0x85000040 %LE %LONG 0x00324000  ;CAS latency 3
+    ;D.S SD:0x85000040 %LE %LONG 0x00224000  ;CAS latency 2
+  )
+  IF &PASR==1
+  (
+    D.S SD:0x85000040 %LE %LONG 0x00324001
+  )
+    D.S SD:0x85000048 %LE %LONG 0x12501100
+    D.S SD:0x85000050 %LE %LONG 0x00540000
+    D.S SD:0x85000058 %LE %LONG 0x00042002 ;CAS latency 3
+    ;D.S SD:0x85000058 %LE %LONG 0x00042001  ;CAS latency 2
+    IF &Remapping==2
+    (
+        D.S SD:0x85000070 %LE %LONG 0x0702
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x85000070 %LE %LONG 0x0703
+    )
+    D.S SD:0x85000088 %LE %LONG 0x0004000B
+    D.S SD:0x85000068 %LE %LONG 0x00400001
+    wait 100.ms
+    D.S SD:0x85000068 %LE %LONG 0x10400001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x02400001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x01400001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x08400001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x04400001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x08400001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x04400001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x00401003
+    wait 1.ms
+    D.S SD:0x850001C0 %LE %LONG 0x10101010
+    wait 1.ms   
+
+)
+IF &Bank2==9
+(
+)
+IF &Bank2==10 ;DDR16
+(
+  IF &PASR==0
+  (
+    D.S SD:0x85000040 %LE %LONG 0x00324000
+  )
+  IF &PASR==1
+  (
+    D.S SD:0x85000040 %LE %LONG 0x00324001
+  )
+    D.S SD:0x85000048 %LE %LONG 0x11781200
+    D.S SD:0x85000050 %LE %LONG 0x00540000
+    D.S SD:0x85000058 %LE %LONG 0x00042003
+    IF &Remapping==2
+    (
+        D.S SD:0x85000070 %LE %LONG 0x0702
+    )
+    IF &Remapping==3
+    (
+        D.S SD:0x85000070 %LE %LONG 0x0703
+    )
+    D.S SD:0x85000088 %LE %LONG 0x0004000B
+    D.S SD:0x85000068 %LE %LONG 0x00420001
+    wait 100.ms
+    D.S SD:0x85000068 %LE %LONG 0x10420001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x02420001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x01420001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x08420001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x04420001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x08420001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x04420001
+    wait 1.ms
+    D.S SD:0x85000068 %LE %LONG 0x00421003
+    wait 1.ms
+    D.S SD:0x850001C0 %LE %LONG 0x10101010
+    wait 1.ms   
+)
+IF &Bank2==11 ;DDR32
+(
+)
+
+wait 100.ms 
+
+enddo

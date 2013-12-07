@@ -1,0 +1,24 @@
+
+&PhyRamStart=0x00000000
+&RamdiskStart=&PhyRamStart+0x00800000
+&RamdiskSize=0x00A00000	;10mb
+&LimitRam=0x04000000	;64mb
+
+&BootArgStart=&PhyRamStart+0x100
+&BootArgEnd=&BootArgStart+0x6ff
+&KernelStart=&PhyRamStart+0x8000
+&KernelStartVirt=&KernelStart+0xC0000000
+&KernelEndVirt=&KernelStartVirt+0x01ffffff
+
+d.load.elf ..\..\GoLinux_2.6.13\vmlinux /gnu /nocode
+
+Y.SPATH.SRD ..\..\GoLinux_2.6.13\kernel
+Y.SPATH.SRD ..\..\GoLinux_2.6.13\init
+Y.SPATH.SRD ..\..\GoLinux_2.6.13\arch\arm\mach-mt3351
+Y.SPATH.SRD ..\..\GoLinux_2.6.13\arch\arm\kernel
+Y.SPATH.SRD ..\..\GoLinux_2.6.13\arch\arm\mm
+Y.SPATH.SRD ..\..\GoLinux_2.6.13\drivers
+Y.SPATH.SRD ..\..\GoLinux_2.6.13\mm
+Y.SPATH.SRD ..\..\GoLinux_2.6.13\arch\arm\boot\compressed
+Y.SPATH.SRD ..\..\GoLinux_2.6.13\lib
+

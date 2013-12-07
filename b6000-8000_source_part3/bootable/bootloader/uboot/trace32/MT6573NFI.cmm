@@ -1,0 +1,190 @@
+SYStem.RESet
+
+SYStem.CPU ARM1176JZ
+System.Option Cflush on    	;flush the cache to avoid data consistency
+SYStem.JtagClock Rtck
+System.Option ResBreak off 	;Don't hold the ARM11 core after reset
+;System.Option EnReset off
+System.Option EnReset on
+
+; Workaround from Shock to improve JTAG connectivity issue
+;jtag.LOCK 
+;jtag.pin.enable
+;jtag.pin.NTRST LOW 
+;wait 300.ms
+;jtag.pin.NTRST HIGH
+;wait 200.ms
+;jtag.pin.tck HIGH
+;jtag.UNLOCK 
+;sys.m.ATTACH
+
+;   SYStem.Up will reset the CPU (including all its status).
+SYStem.Up
+; Disable power gating.
+D.S SD:0x70026318 %LE %LONG 0x80
+; specify the register address
+&NFI_Base=0x70009000;  
+&NFI_CNFG=(&NFI_Base+0x0000);
+&NFI_PAGEFMT=(&NFI_Base+0x0004);
+&NFI_CON=(&NFI_Base+0x0008);
+&NFI_ACCCON=(&NFI_Base+0x000C);
+&NFI_INTREN=(&NFI_Base+0x0010);
+&NFI_INTR=(&NFI_Base+0x0014);
+&NFI_CMD=(&NFI_Base+0x0020);
+&NFI_ADDRNOB=(&NFI_Base+0x0030);
+&NFI_COLADDR=(&NFI_Base+0x0034);
+&NFI_ROWADDR=(&NFI_Base+0x0038);
+&NFI_STRDATA=(&NFI_Base+0x0040);
+&NFI_CNRNB=(&NFI_Base+0x0044);
+&NFI_DATAW=(&NFI_Base+0x0050);
+&NFI_DATAR=(&NFI_Base+0x0054);
+&NFI_PIO_RDY=(&NFI_Base+0x0058);
+&NFI_STA=(&NFI_Base+0x0060);
+&NFI_FIFOSTA=(&NFI_Base+0x0064);
+&NFI_LOCKSTA=(&NFI_Base+0x0068);
+&NFI_ADDRCNTR=(&NFI_Base+0x0070);
+&NFI_STRADDR=(&NFI_Base+0x0080);
+&NFI_BYTELEN=(&NFI_Base+0x0084);
+;======== Reset ===========
+;D.S SD:&NFI_ACCCON %LE %LONG 0x70033333
+D.S SD:&NFI_CON %LE %LONG 0x00000003
+D.S SD:&NFI_PAGEFMT %LE %LONG 0x00000000    ;use 8 bit to read ID
+D.S SD:&NFI_CNFG %LE %LONG 0x00005000
+D.S SD:&NFI_CMD %LE %LONG 0x000000FF
+wait 1.s
+
+
+;======== Read ID ===========
+;ELPIDA EHD013151MA-50-F ((x16 4G Nand + x32 4G LP-DDR 400MHz, 137balls)
+;0x20_BC_10_55;
+;0x5510BC20; <--Check with LSB and MSB 
+;D.S SD:&NFI_ACCCON %LE %LONG 0x70033333
+D.S SD:&NFI_CON %LE %LONG 0x00000003
+D.S SD:&NFI_PAGEFMT %LE %LONG 0x00000000    ;use 8 bit to read ID
+D.S SD:&NFI_CNFG %LE %LONG 0x00002002
+D.S SD:&NFI_CMD %LE %LONG 0x00000090
+D.S SD:&NFI_COLADDR %LE %LONG 0x00000000
+D.S SD:&NFI_ROWADDR %LE %LONG 0x00000000
+D.S SD:&NFI_ADDRNOB %LE %LONG 0x00000001
+D.S SD:&NFI_CON  %LE %LONG 0x00000090
+
+wait 1.s
+
+&temp=data.long(SD:&NFI_DATAR)
+PRINT "ID:&temp"
+;=========== Erase ============
+;D.S SD:&NFI_ACCCON %LE %LONG 0x70033333
+D.S SD:&NFI_CON %LE %LONG 0x00000003
+D.S SD:&NFI_PAGEFMT %LE %LONG 0x0000000A ; 16 bit mode, 2KB
+D.S SD:&NFI_CNFG %LE %LONG 0x00004000
+D.S SD:&NFI_INTREN %LE %LONG 0x8
+D.S SD:&NFI_CMD %LE %LONG 0x60
+D.S SD:&NFI_COLADDR %LE %LONG 0x00000000
+D.S SD:&NFI_ROWADDR %LE %LONG 0x00000000
+D.S SD:&NFI_ADDRNOB %LE %LONG 0x30
+D.S SD:&NFI_CMD %LE %LONG 0xD0
+
+wait 1.s
+&temp=data.long(SD:&NFI_INTR)
+PRINT "Interrupt:&temp" ;; this value should be 0x08
+IF &temp!=0x8
+(
+   PRINT "Erase ERROR"
+   STOP;
+)
+;=========== Program ============
+;D.S SD:&NFI_ACCCON %LE %LONG 0x70033333
+D.S SD:&NFI_CON %LE %LONG 0x00000003
+D.S SD:&NFI_PAGEFMT %LE %LONG 0x0000000A ; 16 bit mode, 2KB
+D.S SD:&NFI_CNFG %LE %LONG 0x00003000
+D.S SD:&NFI_CMD %LE %LONG 0x80
+D.S SD:&NFI_COLADDR %LE %LONG 0x00000000
+D.S SD:&NFI_ROWADDR %LE %LONG 0x00000000
+D.S SD:&NFI_ADDRNOB %LE %LONG 0x32
+wait 1.s    ; wait address done
+ 
+D.S SD:&NFI_INTREN %LE %LONG 0x10; busy return to ready
+D.S SD:&NFI_CON %LE %LONG 0x00004200    ; Burst write
+&temp=0;
+&loopindex=0;
+LOOP 0x100
+(   
+   &temp=(&loopindex*0x100)+&loopindex;
+WrPolling:
+   &reg_val=data.long(SD:&NFI_PIO_RDY)
+   if &reg_val!=1
+   (
+       print "wait FIFO ready"
+       GOTO WrPolling;
+       
+   )
+   else
+   (
+       D.S SD:&NFI_DATAW %LE %LONG &temp
+       print "Write &temp"
+   )
+   &loopindex=&loopindex+1;
+)
+D.S SD:&NFI_CMD %LE %LONG 0x10
+wait 1.s
+&temp=data.long(SD:&NFI_INTR)
+PRINT "Interrupt:&temp" ;; this value should be 0x10
+IF &temp!=0x10
+(
+   PRINT "PROG ERROR"
+   STOP;
+)
+;=========== Read ============
+;D.S SD:&NFI_ACCCON %LE %LONG 0x70033333
+D.S SD:&NFI_CON %LE %LONG 0x00000003
+D.S SD:&NFI_PAGEFMT %LE %LONG 0x0000000A ; 16 bit mode, 2KB
+D.S SD:&NFI_CNFG %LE %LONG 0x00001002
+D.S SD:&NFI_CMD %LE %LONG 0x00
+D.S SD:&NFI_COLADDR %LE %LONG 0x00000000
+D.S SD:&NFI_ROWADDR %LE %LONG 0x00000000
+D.S SD:&NFI_ADDRNOB %LE %LONG 0x32
+wait 1.s    ; wait address done
+D.S SD:&NFI_CMD %LE %LONG 0x30
+D.S SD:&NFI_INTREN %LE %LONG 0x10; busy return to ready
+wait 1.s    ; wait address done
+&temp=data.long(SD:&NFI_INTR)
+PRINT "Interrupt:&temp" ;; this value should be 0x10
+IF &temp!=0x10
+(
+   PRINT "ERRR"
+   STOP;
+)
+D.S SD:&NFI_CON %LE %LONG 0x00004100    ; Burst read
+&temp=0;
+&loopindex=0;
+LOOP 0x100
+(
+   
+   &temp=(&loopindex*0x100)+&loopindex;
+RdPolling:
+   &reg_val=data.long(SD:&NFI_PIO_RDY)
+   if &reg_val!=1
+   (
+       print "wait FIFO ready"
+       GOTO RdPolling;
+       
+   )
+   else
+   (
+      &reg_val=data.long(SD:&NFI_DATAR)      ; don't open trace32 memory windows!!
+      if &reg_val!=&temp
+      (
+        print "error";
+        STOP;
+      )       
+      else
+      (
+        print "write:&temp read &reg_val"
+      )      
+   )
+   &loopindex=&loopindex+1;
+)
+print "Test complete!!"
+
+
+

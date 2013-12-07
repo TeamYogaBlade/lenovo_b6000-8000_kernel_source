@@ -1,0 +1,10 @@
+
+&zImageStart=0x508000
+
+break.reset
+d.load.elf ..\..\..\kernel\linux\arch\arm\boot\compressed\vmlinux &zImageStart /gnu /nocode
+
+Y.SPATH.SRD ..\..\..\kernel\linux\arch\arm\boot\compressed
+Y.SPATH.SRD ..\..\..\kernel\linux\lib
+
+b.s decompress_kernel
