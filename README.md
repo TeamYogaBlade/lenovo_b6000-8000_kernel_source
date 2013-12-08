@@ -32,6 +32,17 @@ unzip ../b6000-8000_source_part3.zip -d .
 
 ## Building
 (work in progress...)
+1. Install Android SDK & NDK
+1. Install Android API 17 (4.2.2/CM10.1)
+1. gedit ~/.bashrc
+<pre>
+export ANDROIDSDK=$HOME/android/sdk
+export ANDROIDNDK=$HOME/android/ndk
+export ANDROIDNDKVER=r9b
+export ANDROIDAPI=17
+</pre>
+
+...
 export PATH=~/Your_Toolchain_PATH/  
 for example /alps/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.6/bin  
 Build Command:  
