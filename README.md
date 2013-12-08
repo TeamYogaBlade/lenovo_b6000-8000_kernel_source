@@ -53,6 +53,11 @@ export TARGET_PRODUCT=lenovo89_tb_x8_jb2
 <pre>
 export TARGET_PRODUCT=lenovo89_tb_x10_jb2
 </pre>
+1. Hack a workaround to some stupid bug in the Makefile's that I am too dumb to figure out
+<pre>
+ln -s ../../mediatek/platform mediatek/platform
+ln -s ../../mediatek/kernel mediatek/kernel
+</pre>
 1. make
 
 
