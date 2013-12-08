@@ -42,9 +42,7 @@ export ANDROIDSDK=$HOME/android/sdk
 export ANDROIDNDK=$HOME/android/ndk
 export ANDROIDNDKVER=r9b
 export ANDROIDAPI=17
-
 export PATH=$PATH:$ANDROIDNDK/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin
-
 export MTK_ROOT_CUSTOM=../mediatek/custom/
 </pre>
    For b6000:
