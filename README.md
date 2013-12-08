@@ -32,17 +32,31 @@ unzip ../b6000-8000_source_part3.zip -d .
 
 ## Building
 (work in progress...)
+
 1. Install Android SDK & NDK
 1. Install Android API 17 (4.2.2/CM10.1)
-1. gedit ~/.bashrc
+1. cd kernel
+1. Set up environment
 <pre>
 export ANDROIDSDK=$HOME/android/sdk
 export ANDROIDNDK=$HOME/android/ndk
 export ANDROIDNDKVER=r9b
 export ANDROIDAPI=17
+export MTK_ROOT_CUSTOM=../mediatek/custom/
 </pre>
+   For b6000:
+<pre>
+export TARGET_PRODUCT=lenovo89_tb_x8_jb2
+</pre>
+   For b8000:
+<pre>
+export TARGET_PRODUCT=lenovo89_tb_x10_jb2
+</pre>
+1. make
 
-...
+
+...  
+
 export PATH=~/Your_Toolchain_PATH/  
 for example /alps/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.6/bin  
 Build Command:  
