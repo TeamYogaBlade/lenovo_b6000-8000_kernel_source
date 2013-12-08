@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-source ../mediatek/build/shell.sh ../ kernel
+../mediatek/build/shell.sh ../ kernel
 
 # Default settings
 verfile="android.ver"
@@ -68,8 +68,8 @@ while test -n "$1"; do
 done
 
 # clean if it is necessary
-if [ "${clean}" == "y" ];   then make_clean; exit 0; fi
-if [ "${rebuild}" == "y" ]; then make_clean; fi
+if [ "${clean}" = "y" ];   then make_clean; exit 0; fi
+if [ "${rebuild}" = "y" ]; then make_clean; fi
 
 echo "**** Configuring / ` [ -z $custcfg ] || ! echo $custcfg && echo $defcfg ` / ****"
 # select correct configuration file
