@@ -36,7 +36,7 @@ unzip ../b6000-8000_source_part3.zip -d .
 1. Install Android SDK & NDK
 1. Install Android API 17 (4.2.2/CM10.1)
 1. cd kernel
-1. Hack a workaround to some stupid bug in the Makefile's that I am too dumb to figure out at the moment:
+1. TBD...Hack a workaround to some stupid bug in the Makefile's that I am too dumb to figure out at the moment:
 <pre>
 ln -s ../../mediatek/platform mediatek/platform
 ln -s ../../mediatek/kernel mediatek/kernel
@@ -59,7 +59,7 @@ export TARGET_PRODUCT=lenovo89_tb_x8_jb2
 <pre>
 export TARGET_PRODUCT=lenovo89_tb_x10_jb2
 </pre>
-1. make
+1. ../mediatek/build/build-kernel.sh
 
 
 ...  
