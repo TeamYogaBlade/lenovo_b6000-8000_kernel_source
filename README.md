@@ -21,14 +21,17 @@ Downloaded from:
     * bootable
     * external
 
-## Processing
-
+## Unpacking Downloaded ZIPs
 <pre>
 cd lenovo_b6000-8000_source
 unzip ../b6000-8000_source_part1.zip -d .
 unzip ../b6000-8000_source_part2.zip -d .
 unzip ../b6000-8000_source_part3.zip -d .
 </pre>
+
+## Notes
+* What is weird is that the b8000 has a MT8125 CPU, but the source code builds to a MT6589.  
+  I am guessing they are basically the same CPU?
 
 ## Building
 (work in progress...)
