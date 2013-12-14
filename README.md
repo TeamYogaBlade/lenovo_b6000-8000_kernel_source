@@ -5,7 +5,8 @@ Downloaded from:
   -or-  
   http://mobilesupport.lenovo.com/en-us/products/yoga_tablet_8?tabname=downloads
   1. Open Source Code (part 1) - Yoga Tablet 8 / 10  
-     http://download.lenovo.com/consumer/open_source_code/b6000-8000_source_part1.zip
+     http://download.lenovo.com/consumer/open_source_code/b6000-8000_source_part1.zip  
+     200MB
     * mediatek
       * build
       * config
@@ -13,10 +14,12 @@ Downloaded from:
       * kernel - "intended for Mediatek solution kernel specific non-customization codes"
       * platform
   2. Open Source Code (part 2) - Yoga Tablet 8 / 10  
-     http://download.lenovo.com/consumer/open_source_code/b6000-8000_source_part2.zip
+     http://download.lenovo.com/consumer/open_source_code/b6000-8000_source_part2.zip  
+     121MB
     * kernel
   3. Open Source Code (part 3) - Yoga Tablet 8 / 10  
-     http://download.lenovo.com/consumer/open_source_code/b6000-8000_source_part3.zip
+     http://download.lenovo.com/consumer/open_source_code/b6000-8000_source_part3.zip  
+     103MB
     * bionic
     * bootable
     * external
