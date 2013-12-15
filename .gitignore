@@ -9,6 +9,7 @@
 /kernel/..tmp_*
 /kernel/.missing-syscalls.d
 /kernel/.tmp_*
+/kernel/.version
 /kernel/.vmlinux*
 /kernel/System.map
 /kernel/**/*.S
@@ -30,7 +31,7 @@
 /kernel/usr/.initramfs_data.cpio.d
 /kernel/usr/gen_init_cpio
 /kernel/usr/initramfs_data.cpio
-
+/kernel/include/generated/
 /mediatek/config/out/
 /mediatek/custom/out/
 
