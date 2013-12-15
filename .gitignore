@@ -1,15 +1,18 @@
 *~
 
+/**/*.cmd
+/**/*.o
+/**/*.ko
+/**/modules.order
+/**/*.mod.c
+
 /kernel/..tmp_*
 /kernel/.missing-syscalls.d
 /kernel/.tmp_*
 /kernel/.vmlinux*
 /kernel/System.map
-/**/*.cmd
 /kernel/**/*.S
 /kernel/**/*.s
-/**/*.o
-/**/*.ko
 /kernel/**/lib.a
 /kernel/**/piggy.gzip
 /kernel/**/vmlinux
@@ -18,8 +21,6 @@
 /kernel/**/Image
 /kernel/**/modules.builtin
 /kernel/drivers/video/logo/*_*.c
-/**/modules.order
-/**/*.mod.c
 /kernel/kernel/config_data.*
 /kernel/kernel/debug/kdb/gen-kdb_cmds.c
 /kernel/kernel/timeconst.h
@@ -29,6 +30,7 @@
 /kernel/usr/.initramfs_data.cpio.d
 /kernel/usr/gen_init_cpio
 /kernel/usr/initramfs_data.cpio
+
 /mediatek/config/out/
 /mediatek/custom/out/
 
