@@ -1,37 +1,91 @@
+#
+# Ideas came from:
+# https://github.com/torvalds/linux/blob/master/.gitignore
+#
+# NOTE! Don't add files that are generated in specific
+# subdirectories here. Add them in the ".gitignore" file
+# in that subdirectory instead.
+#
+# NOTE! Please use 'git ls-files -i --exclude-standard'
+# command after changing this file, to see if there are
+# any tracked files which get ignored after the change.
+#
+# Normal rules
+#
+#.*
+#*.o
+#*.o.*
+#*.a
+#*.s
+#*.ko
+#*.so
+#*.so.dbg
+#*.mod.c
+#*.i
+#*.lst
+#*.symtypes
+#*.order
+#modules.builtin
+#*.elf
+#*.bin
+#*.gz
+#*.bz2
+#*.lzma
+#*.xz
+#*.lz4
+#*.lzo
+#*.patch
+#*.gcno
+
+#
+# git files that we don't want to ignore even it they are dot-files
+#
+#!.gitignore
+
+#
+# Generated include files
+#
+#include/config
+#include/generated
+#arch/*/include/generated
+
+# stgit generated dirs
+#patches-*
+
+# quilt's files
+#patches
+#series
+
+# cscope files
+#cscope.*
+#ncscope.*
+
+# gnu global files
+#GPATH
+#GRTAGS
+#GSYMS
+#GTAGS
+
+#*.orig
 *~
+#\#*#
 
-/**/*.cmd
-/**/*.o
-/**/*.ko
-/**/modules.order
-/**/*.mod.c
+#
+# Leavings from module signing
+#
+#extra_certificates
+#signing_key.priv
+#signing_key.x509
+#x509.genkey
 
-/kernel/..tmp_*
-/kernel/.missing-syscalls.d
-/kernel/.tmp_*
-/kernel/.version
-/kernel/.vmlinux*
-/kernel/System.map
-/kernel/**/*.S
-/kernel/**/*.s
-/kernel/**/lib.a
-/kernel/**/piggy.gzip
-/kernel/**/vmlinux
-/kernel/**/vmlinux.lds
-/kernel/**/zImage
-/kernel/**/Image
-/kernel/**/modules.builtin
-/kernel/drivers/video/logo/*_*.c
-/kernel/kernel/config_data.*
-/kernel/kernel/debug/kdb/gen-kdb_cmds.c
-/kernel/kernel/timeconst.h
-/kernel/lib/crc32table.h
-/kernel/lib/gen_crc32table
-/kernel/net/wireless/regdb.c
-/kernel/usr/.initramfs_data.cpio.d
-/kernel/usr/gen_init_cpio
-/kernel/usr/initramfs_data.cpio
-/kernel/include/generated/
-/mediatek/config/out/
-/mediatek/custom/out/
+# pv...
+
+#/**/*.cmd
+#/**/*.o
+#/**/*.ko
+#/**/modules.order
+#/**/*.mod.c
+
+#/mediatek/config/out/
+#/mediatek/custom/out/
 
