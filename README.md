@@ -68,7 +68,6 @@ export ANDROIDNDK=$HOME/android/ndk
 export ANDROIDNDKVER=r9b
 export ANDROIDAPI=17
 export PATH=$PATH:$ANDROIDNDK/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin
-export MTK_ROOT_CUSTOM=../mediatek/custom/
 </pre>
    For b6000:
 <pre>
@@ -80,6 +79,7 @@ export TARGET_PRODUCT=lenovo89_tb_x10_jb2
 </pre>
 <pre>
 cd lenovo_b6000-8000_kernel_source/kernel
+export MTK_ROOT_CUSTOM=../mediatek/custom/
 make
 </pre>
 
