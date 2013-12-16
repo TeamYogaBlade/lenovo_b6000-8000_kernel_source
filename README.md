@@ -35,14 +35,14 @@ unzip b6000-8000_source_part1.zip -d lenovo_b6000-8000_kernel_source
 unzip b6000-8000_source_part2.zip -d lenovo_b6000-8000_kernel_source
 unzip b6000-8000_source_part3.zip -d lenovo_b6000-8000_kernel_source
 </pre>
-1. Fix paths per 4ebbf08e
+1. Fix paths per 4ebbf08ea2b5abfb5577f865f9681ce0a59ebaad
 <pre>
 cd lenovo_b6000-8000_kernel_source/kernel/mediatek
 ln -s ../../mediatek/custom custom
 ln -s ../../mediatek/kernel kernel
 ln -s ../../mediatek/platform platform
 </pre>
-   And per 9a7c6646
+   And per 9a7c664697db24ea4ee6b71f6ea18f58aa8d47cd
 <pre>
 cd lenovo_b6000-8000_kernel_source/mediatek/platform/mt6589/kernel/drivers/dual_ccci
 ln -s ../masp/asf asf
@@ -53,7 +53,7 @@ cd lenovo_b6000-8000_kernel_source
 chmod +x mediatek/build/shell.sh
 chmod +x mediatek/build/kernel/build-kernel.sh
 </pre>
-1. Edit build-kernel.sh per e6978d2a
+1. Edit build-kernel.sh per e6978d2af3120e428f2c688419a59324bfd04a03
 
 ## Build
 1. Install Android SDK & NDK
