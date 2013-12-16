@@ -1,4 +1,4 @@
-# Lenovo Yoga 8” (b6000) and 10” (b8000) Tablets Open Source Code
+# Lenovo Yoga 8” (b6000) and 10” (b8000) Tablets Kernel Open Source Code
 
 Downloaded from:
 * http://mobilesupport.lenovo.com/en-us/products/yoga_tablet_10?tabname=downloads  
@@ -24,30 +24,34 @@ Downloaded from:
     * bootable
     * external
 
-## Unpacking Downloaded ZIPs
-<pre>
-cd lenovo_b6000-8000_source
-unzip ../b6000-8000_source_part1.zip -d .
-unzip ../b6000-8000_source_part2.zip -d .
-unzip ../b6000-8000_source_part3.zip -d .
-</pre>
-
 ## Notes
-* What is weird is that the b8000 has a MT8125 CPU, but the source code builds to a MT6589.  
+* What is weird is that the b6000/b8000 MT8125 CPU builds MT6589 code.  
   I am guessing they are basically the same CPU?
 
-## Building
-(work in progress...)
+## Preparing ZIPs to Build
+1. Unzip ZIPs
+<pre>
+unzip b6000-8000_source_part1.zip -d lenovo_b6000-8000_kernel_source
+unzip b6000-8000_source_part2.zip -d lenovo_b6000-8000_kernel_source
+unzip b6000-8000_source_part3.zip -d lenovo_b6000-8000_kernel_source
+</pre>
+1. Fix paths
+<pre>
+cd lenovo_b6000-8000_kernel_source/kernel/mediatek
+ln -s ../../mediatek/kernel kernel
+ln -s ../../mediatek/platform platform
+</pre>
+1. Fix scripts
+<pre>
+cd lenovo_b6000-8000_kernel_source/kernel
+chmod +x ../mediatek/build/shell.sh
+chmod +x ../mediatek/build/kernel/build-kernel.sh
+</pre>
+   Edit build-kernel.sh per ...
 
+## Build
 1. Install Android SDK & NDK
 1. Install Android API 17 (4.2.2/CM10.1)
-1. cd kernel
-1. TBD...Hack a workaround to some stupid bug in the Makefile's that I am too dumb to figure out at the moment:
-<pre>
-ln -s ../../mediatek/platform mediatek/platform
-ln -s ../../mediatek/kernel mediatek/kernel
-ln -s ../../mediatek/custom mediatek/custom
-</pre>
 1. Set up environment:
 <pre>
 export ANDROIDSDK=$HOME/android/sdk
@@ -65,18 +69,15 @@ export TARGET_PRODUCT=lenovo89_tb_x8_jb2
 <pre>
 export TARGET_PRODUCT=lenovo89_tb_x10_jb2
 </pre>
-1. ../mediatek/build/build-kernel.sh
+<pre>
+cd lenovo_b6000-8000_kernel_source/kernel
+make
+</pre>
 
-
-...  
-
-export PATH=~/Your_Toolchain_PATH/  
-for example /alps/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.6/bin  
-Build Command:  
-(uboot had been phase out from jb)  
-### kernel
-1. cd kernel
-2. For b6000: export TARGET_PRODUCT=lenovo89_tb_x8_jb2
-4. For b8000: export TARGET_PRODUCT=lenovo89_tb_x10_jb2
-3. export MTK_ROOT_CUSTOM=../mediatek/custom/
-4. make
+## Image
+First, follow the above Build steps; then...  
+<pre>
+cd lenovo_b6000-8000_kernel_source/kernel
+export MTK_ROOT_BUILD=../mediatek/build/
+../mediatek/build/kernel/build-kernel.sh
+</pre>
