@@ -25,7 +25,10 @@ Downloaded from:
     * external
 
 ## Notes
-* What is weird is that the b6000/b8000 MT8125 CPU builds MT6589 code.  
+* This code for the b6000/b8000 MT8125 CPU compiles against MT6589 code.  
+  https://github.com/TeamYogaBlade/lenovo_b6000-8000_kernel_source/tree/master/mediatek/platform/mt6589  
+  https://github.com/TeamYogaBlade/lenovo_b6000-8000_kernel_source/tree/master/mediatek/config/mt6589  
+  etc...  
   I am guessing they are basically the same CPU?
 
 ## Preparing ZIPs to Build
